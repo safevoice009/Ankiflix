@@ -43,10 +43,13 @@ export default async function Home() {
             </p>
             
             <div className="flex items-center space-x-3 pt-4">
-              <button className="flex items-center space-x-2 rounded-md bg-white px-8 py-3 font-bold text-black transition hover:bg-white/90">
+              <a 
+                href="#discovery" 
+                className="flex items-center space-x-2 rounded-md bg-white px-8 py-3 font-bold text-black transition hover:bg-white/90"
+              >
                 <Play className="h-6 w-6 fill-black" />
                 <span>Browse Decks</span>
-              </button>
+              </a>
               <button className="flex items-center space-x-2 rounded-md bg-[#505050]/50 px-8 py-3 font-bold text-white backdrop-blur-md transition hover:bg-[#505050]/80">
                 <Info className="h-6 w-6" />
                 <span>More Info</span>
@@ -57,10 +60,12 @@ export default async function Home() {
       </section>
 
       {/* Discovery Feed */}
-      <DiscoveryFeed 
-        categories={(categories as any) || []} 
-        trendingDecks={(trendingDecks as any) || []} 
-      />
+      <section id="discovery">
+        <DiscoveryFeed 
+          categories={(categories as any) || []} 
+          trendingDecks={(trendingDecks as any) || []} 
+        />
+      </section>
     </div>
   );
 }

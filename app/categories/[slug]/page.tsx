@@ -1,75 +1,139 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DeckCard from "@/components/DeckCard";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import DeckModal from "@/components/DeckModal";
 import { notFound } from "next/navigation";
-import { Metadata } from "next";
 
-interface Props {
-  params: { slug: string };
+interface Deck {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail_url: string;
+  anki_link: string;
+  ranking: number;
+  total_cards: number;
+  downloads: number;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = params;
-  const { data: category } = await supabase
-    .from("categories")
-    .select("name")
-    .eq("slug", slug)
-    .single();
-
-  if (!category) return { title: "Category Not Found" };
-
-  return {
-    title: `${category.name} Decks — Ankiflix`,
-    description: `Browse the best ${category.name} Anki decks for your study preparation.`,
-  };
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
 }
 
-export default async function CategoryPage({ params }: Props) {
-  const { slug } = params;
+export default function CategoryPage({ params }: { params: { slug: string } }) {
+  const [category, setCategory] = useState<Category | null>(null);
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
 
-  // Fetch category details
-  const { data: category } = await supabase
-    .from("categories")
-    .select("*")
-    .eq("slug", slug)
-    .single();
+  useEffect(() => {
+    async function fetchData() {
+      const { data: cat } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("slug", params.slug)
+        .single();
+
+      if (!cat) {
+        setLoading(false);
+        return;
+      }
+
+      setCategory(cat);
+
+      const { data: d } = await supabase
+        .from("decks")
+        .select("*")
+        .eq("category_id", cat.id)
+        .order("ranking", { ascending: false });
+
+      setDecks(d || []);
+      setLoading(false);
+    }
+
+    fetchData();
+  }, [params.slug]);
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#141414] flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>
+  );
 
   if (!category) notFound();
 
-  // Fetch decks for this category
-  const { data: decks } = await supabase
-    .from("decks")
-    .select("*")
-    .eq("category_id", category.id)
-    .order("ranking", { ascending: false });
-
   return (
-    <div className="min-h-screen bg-background pt-24 px-4 md:px-12 pb-20">
-      <div className="space-y-8 max-w-7xl mx-auto">
-        <header className="space-y-4">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            {category.name} <span className="text-primary">Decks</span>
-          </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl">
-            {category.description || `Browse our collection of high-quality Anki decks for ${category.name}.`}
-          </p>
-        </header>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-          {decks?.map((deck) => (
-            // Note: DeckCard expects an onClick, but here we might want it to link to the deck page
-            // For now, I'll keep the DeckCard as is and maybe it can open the modal or navigate
-            <DeckCard key={deck.id} deck={deck} onClick={() => {}} />
-          ))}
-        </div>
-
-        {decks?.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground text-xl">No decks found in this category yet.</p>
+    <div className="min-h-screen bg-[#141414] text-white">
+      <Navbar />
+      
+      {/* Cinematic Header */}
+      <div className="relative pt-40 pb-20 px-4 md:px-12 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent opacity-50" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 blur-[150px] -z-10 rounded-full" />
+        
+        <div className="max-w-[1400px] mx-auto relative">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="h-px w-12 bg-primary" />
+            <span className="text-primary font-black uppercase tracking-[0.4em] text-xs">
+              CATEGORY ARCHIVE
+            </span>
           </div>
-        )}
+          
+          <h1 className="font-heading text-6xl md:text-8xl lg:text-9xl font-black uppercase tracking-tighter leading-none mb-6">
+            {category.name} <span className="text-primary italic">VAULT</span>
+          </h1>
+          
+          <p className="text-white/40 text-sm md:text-lg max-w-3xl font-medium leading-relaxed uppercase tracking-wide">
+            {category.description || `High-authority Anki mastery decks for ${category.name}. Curated for excellence.`}
+          </p>
+        </div>
       </div>
+
+      {/* Grid Section */}
+      <div className="px-4 md:px-12 pb-32">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex items-center justify-between mb-12 border-b border-white/5 pb-8">
+            <h2 className="font-heading text-2xl font-black uppercase tracking-widest text-white/60">
+              {decks.length} Premium Decks Available
+            </h2>
+            <div className="flex gap-2">
+              {/* Add sorting options here if needed */}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-12">
+            {decks.map((deck) => (
+              <DeckCard 
+                key={deck.id} 
+                deck={deck} 
+                onClick={() => setSelectedDeck(deck)} 
+              />
+            ))}
+          </div>
+
+          {decks.length === 0 && (
+            <div className="py-40 text-center">
+              <div className="inline-block p-12 rounded-3xl bg-[#181818] border border-white/5 shadow-2xl">
+                <p className="text-white/20 font-black uppercase tracking-[0.3em] text-sm">
+                  Catalog Empty
+                </p>
+                <h3 className="font-heading text-4xl mt-4 text-white/40">COMING SOON</h3>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <DeckModal 
+        deck={selectedDeck} 
+        isOpen={!!selectedDeck} 
+        onClose={() => setSelectedDeck(null)} 
+      />
     </div>
   );
 }

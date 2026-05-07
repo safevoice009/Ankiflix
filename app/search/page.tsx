@@ -3,9 +3,16 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import DeckRow from "@/components/DeckRow";
+import DeckCard from "@/components/DeckCard";
 import DeckModal from "@/components/DeckModal";
 import Navbar from "@/components/Navbar";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Deck {
   id: string;
@@ -14,6 +21,8 @@ interface Deck {
   thumbnail_url?: string;
   ranking?: number;
   total_cards?: number;
+  category_id?: string;
+  created_at?: string;
 }
 
 function SearchContent() {
@@ -23,64 +32,135 @@ function SearchContent() {
   const [loading, setLoading] = useState(false);
   const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortBy, setSortBy] = useState("ranking");
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchCategories() {
+      const { data } = await supabase.from("categories").select("*");
+      if (data) setCategories(data);
+    }
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     async function fetchResults() {
       if (!query) return;
       setLoading(true);
-      const { data, error } = await supabase
-        .from('decks')
-        .select('*')
-        .ilike('title', `%${query}%`);
-      
+
+      let baseQuery = supabase.from("decks").select("*");
+      baseQuery = baseQuery.ilike("title", `%${query}%`);
+      if (filterCategory) {
+        baseQuery = baseQuery.eq("category_id", filterCategory);
+      }
+      if (sortBy === "ranking") {
+        baseQuery = baseQuery.order("ranking", { ascending: false });
+      } else if (sortBy === "newest") {
+        baseQuery = baseQuery.order("created_at", { ascending: false });
+      } else if (sortBy === "cards") {
+        baseQuery = baseQuery.order("total_cards", { ascending: false });
+      }
+
+      const { data, error } = await baseQuery;
       if (!error) setResults(data || []);
       setLoading(false);
     }
     fetchResults();
-  }, [query]);
-
-  const handleDeckClick = (deck: Deck) => {
-    setSelectedDeck(deck);
-    setIsModalOpen(true);
-  };
+  }, [query, sortBy, filterCategory]);
 
   return (
-    <div className="min-h-screen pt-32 px-4 md:px-12">
+    <div className="min-h-screen bg-[#141414] pt-40 px-4 md:px-12 pb-32">
       <Navbar />
       
-      <div className="space-y-8">
-        <h1 className="text-2xl font-medium text-muted-foreground">
-          {query ? `Search results for "${query}"` : "Enter a search term"}
-        </h1>
+      <div className="max-w-[1400px] mx-auto space-y-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/5 pb-12">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-px w-8 bg-primary" />
+              <span className="text-primary font-black uppercase tracking-[0.4em] text-[10px]">Search Intelligence</span>
+            </div>
+            <h1 className="font-heading text-4xl md:text-6xl font-black uppercase tracking-tight text-white leading-none">
+              {query ? (
+                <>RESULTS FOR <span className="text-primary italic">"{query}"</span></>
+              ) : (
+                <>QUERY <span className="text-primary italic">PENDING</span></>
+              )}
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center space-x-2 mr-2">
+              <SlidersHorizontal className="h-4 w-4 text-white/20" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Filter Engine</span>
+            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center space-x-4 rounded-xl bg-white/5 border border-white/10 px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all min-w-[180px] justify-between group">
+                  <span className="group-hover:text-primary transition-colors">
+                    {filterCategory ? categories.find(c => c.id === filterCategory)?.name : 'All Fields'}
+                  </span>
+                  <ChevronDown className="h-4 w-4 opacity-30 group-hover:opacity-100 transition-opacity" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-[#181818]/95 backdrop-blur-2xl border-white/10 text-white min-w-[200px] rounded-xl p-2 shadow-2xl">
+                <DropdownMenuItem className="rounded-lg focus:bg-primary/20 focus:text-primary cursor-pointer text-[10px] font-black uppercase tracking-widest p-3" onClick={() => setFilterCategory(null)}>All Fields</DropdownMenuItem>
+                {categories.map((cat) => (
+                  <DropdownMenuItem key={cat.id} className="rounded-lg focus:bg-primary/20 focus:text-primary cursor-pointer text-[10px] font-black uppercase tracking-widest p-3" onClick={() => setFilterCategory(cat.id)}>
+                    {cat.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center space-x-4 rounded-xl bg-white/5 border border-white/10 px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all min-w-[180px] justify-between group">
+                  <span className="group-hover:text-primary transition-colors">
+                    {sortBy === 'ranking' ? 'Best Match' : sortBy === 'newest' ? 'Newest' : 'Most Cards'}
+                  </span>
+                  <ChevronDown className="h-4 w-4 opacity-30 group-hover:opacity-100 transition-opacity" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-[#181818]/95 backdrop-blur-2xl border-white/10 text-white min-w-[200px] rounded-xl p-2 shadow-2xl">
+                <DropdownMenuItem className="rounded-lg focus:bg-primary/20 focus:text-primary cursor-pointer text-[10px] font-black uppercase tracking-widest p-3" onClick={() => setSortBy('ranking')}>Best Match</DropdownMenuItem>
+                <DropdownMenuItem className="rounded-lg focus:bg-primary/20 focus:text-primary cursor-pointer text-[10px] font-black uppercase tracking-widest p-3" onClick={() => setSortBy('newest')}>Newest</DropdownMenuItem>
+                <DropdownMenuItem className="rounded-lg focus:bg-primary/20 focus:text-primary cursor-pointer text-[10px] font-black uppercase tracking-widest p-3" onClick={() => setSortBy('cards')}>Most Cards</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
 
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <div className="flex justify-center py-40">
+            <div className="h-16 w-16 animate-spin rounded-full border-2 border-primary border-t-transparent shadow-[0_0_30px_rgba(229,9,20,0.2)]" />
           </div>
         ) : results.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-16 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 animate-in fade-in duration-700">
             {results.map((deck) => (
-              <div 
+              <DeckCard 
                 key={deck.id} 
-                className="group relative cursor-pointer overflow-hidden rounded-md transition duration-300 hover:scale-105"
-                onClick={() => handleDeckClick(deck)}
-              >
-                <div 
-                  className="aspect-video w-full bg-cover bg-center"
-                  style={{ backgroundImage: `url(${deck.thumbnail_url})` }}
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
-                  <span className="text-white font-medium">View Deck</span>
-                </div>
-                <div className="p-2">
-                   <h3 className="text-sm font-medium truncate">{deck.title}</h3>
-                </div>
-              </div>
+                deck={deck} 
+                onClick={(d) => {
+                  setSelectedDeck(d);
+                  setIsModalOpen(true);
+                }} 
+              />
             ))}
           </div>
         ) : query ? (
-          <div className="py-20 text-center text-muted-foreground">
-            No decks found matching your search.
+          <div className="py-40 text-center space-y-8">
+            <div className="inline-block p-12 rounded-3xl bg-[#181818] border border-white/5 shadow-2xl">
+              <p className="text-white/20 font-black uppercase tracking-[0.3em] text-sm">No Intel Found</p>
+              <h3 className="font-heading text-4xl mt-4 text-white/40">ZERO MATCHES</h3>
+              <button 
+                onClick={() => {setFilterCategory(null); setSortBy('ranking');}}
+                className="mt-8 text-primary hover:text-white font-black uppercase tracking-[0.2em] text-[10px] transition-colors"
+              >
+                Reset Search Filters
+              </button>
+            </div>
           </div>
         ) : null}
       </div>

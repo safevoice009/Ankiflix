@@ -1,11 +1,23 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Bebas_Neue, Outfit } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const bebas = Bebas_Neue({
+  weight: "400",
+  variable: "--font-bebas",
+  subsets: ["latin"],
+});
+
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
@@ -22,9 +34,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} h-full antialiased dark`}
+      className={`${inter.variable} ${bebas.variable} ${outfit.variable} h-full antialiased dark`}
     >
       <body className="min-h-full bg-background text-foreground font-sans selection:bg-primary selection:text-white flex flex-col">
+        <Toaster position="bottom-right" toastOptions={{ style: { background: '#333', color: '#fff' } }} />
         <Navbar />
         <main className="flex-grow">
           {children}

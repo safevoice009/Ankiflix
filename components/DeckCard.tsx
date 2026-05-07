@@ -65,10 +65,10 @@ export default function DeckCard({ deck, onClick }: DeckCardProps) {
         {isHovered && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 0 }}
-            animate={{ opacity: 1, scale: 1.15, y: -40 }}
+            animate={{ opacity: 1, scale: 1.25, y: -60 }}
             exit={{ opacity: 0, scale: 0.9, y: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="absolute inset-x-[-10%] top-[-10%] z-50 h-[140%] w-[120%] rounded-xl bg-[#181818] shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden"
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="absolute inset-x-[-15%] top-[-15%] z-50 h-auto min-w-[320px] rounded-xl bg-[#181818] shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden border border-white/10"
           >
             <AspectRatio ratio={16 / 9}>
               <div 
@@ -76,32 +76,46 @@ export default function DeckCard({ deck, onClick }: DeckCardProps) {
                 style={{ backgroundImage: `url(${thumbnailUrl})` }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent" />
+              <div className="absolute top-2 left-2 flex flex-col gap-1">
+                <Badge className="bg-primary text-[8px] font-black uppercase tracking-tighter h-4 px-1 rounded-sm border-none">Most Popular</Badge>
+              </div>
             </AspectRatio>
 
-            <div className="p-4 space-y-3">
+            <div className="p-5 space-y-4">
               <div className="flex items-center space-x-2">
-                <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90">
-                  <Play className="h-4 w-4 fill-black" />
+                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90 shadow-lg">
+                  <Play className="h-5 w-5 fill-black" />
                 </button>
-                <button className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-muted-foreground/50 transition hover:border-white text-white">
-                  <Plus className="h-4 w-4" />
+                <button className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5">
+                  <Plus className="h-5 w-5" />
                 </button>
-                <button className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-muted-foreground/50 transition hover:border-white text-white">
-                  <ThumbsUp className="h-4 w-4" />
+                <button className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5">
+                  <ThumbsUp className="h-5 w-5" />
                 </button>
-                <button className="ml-auto flex h-8 w-8 items-center justify-center rounded-full border-2 border-muted-foreground/50 transition hover:border-white text-white">
-                  <ChevronDown className="h-4 w-4" />
+                <button className="ml-auto flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5">
+                  <ChevronDown className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2 text-xs font-bold">
-                  <span className="text-green-500">{deck.ranking ? Math.round(deck.ranking * 20) : 95}% Match</span>
-                  <span className="text-white border border-white/20 px-1 text-[10px] rounded-sm">HD</span>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-3 text-xs font-black">
+                  <span className="text-green-500">{deck.ranking ? Math.round(deck.ranking * 20) : 98}% Match</span>
+                  <span className="text-white border border-white/30 px-1.5 text-[9px] rounded-sm bg-white/5">4K Ultra HD</span>
+                  <span className="text-white/60">{deck.total_cards ? `${deck.total_cards} Cards` : 'Premium Content'}</span>
                 </div>
-                <h3 className="text-sm font-bold text-white line-clamp-1">{deck.title}</h3>
-                <div className="flex flex-wrap gap-1">
-                   <Badge className="bg-primary/20 text-primary border-none text-[8px] px-1 h-3 uppercase font-bold">Recommended</Badge>
+                
+                <h3 className="text-lg font-black text-white leading-tight font-heading tracking-tight">{deck.title}</h3>
+                
+                <p className="text-[10px] text-white/50 leading-relaxed line-clamp-3 font-medium">
+                  {deck.description || "This premium Anki deck has been scientifically designed to optimize your long-term retention and exam performance. Features high-quality images and clear explanations."}
+                </p>
+                
+                <div className="flex flex-wrap gap-2 pt-1">
+                   <span className="text-[9px] font-bold text-white/80">Intense</span>
+                   <span className="text-white/20">•</span>
+                   <span className="text-[9px] font-bold text-white/80">Highly Recommended</span>
+                   <span className="text-white/20">•</span>
+                   <span className="text-[9px] font-bold text-white/80">Top 1%</span>
                 </div>
               </div>
             </div>

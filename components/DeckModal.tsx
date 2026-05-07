@@ -29,6 +29,17 @@ interface DeckModalProps {
 export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
   if (!deck) return null;
 
+  const handleDownload = () => {
+    if (deck.anki_link) {
+      window.open(deck.anki_link, "_blank");
+    } else {
+      window.open(
+        `https://ankiweb.net/shared/decks?search=${encodeURIComponent(deck.title)}`,
+        "_blank"
+      );
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl overflow-hidden rounded-md bg-[#181818] p-0 text-foreground border-none">
@@ -49,7 +60,10 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
           <div className="absolute bottom-6 left-6 space-y-4">
             <h2 className="text-3xl font-bold md:text-4xl">{deck.title}</h2>
             <div className="flex items-center space-x-3">
-              <button className="flex items-center space-x-2 rounded-md bg-white px-8 py-2 font-bold text-black transition hover:bg-white/90">
+              <button 
+                onClick={handleDownload}
+                className="flex items-center space-x-2 rounded-md bg-white px-8 py-2 font-bold text-black transition hover:bg-white/90"
+              >
                 <Play className="h-5 w-5 fill-black" />
                 <span>Download</span>
               </button>

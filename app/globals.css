@@ -153,6 +153,36 @@ body {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
+/* Cinematic Hero Enhancements */
+.bg-cinematic-gradient {
+  background: radial-gradient(circle at 20% 50%, rgba(229, 9, 20, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 1) 0%, transparent 50%),
+              #141414;
+  background-size: 200% 200%;
+  animation: shimmer 15s ease infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.particle {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: float linear infinite;
+}
+
+@keyframes float {
+  from { transform: translateY(0) translateX(0); opacity: 0; }
+  25% { opacity: 1; }
+  75% { opacity: 1; }
+  to { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

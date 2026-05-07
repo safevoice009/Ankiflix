@@ -49,7 +49,7 @@ function SearchContent() {
       if (!query) return;
       setLoading(true);
 
-      let baseQuery = supabase.from("decks").select("*");
+      let baseQuery = supabase.from("decks").select("*, user_deck_progress(*)");
       baseQuery = baseQuery.ilike("title", `%${query}%`);
       if (filterCategory) {
         baseQuery = baseQuery.eq("category_id", filterCategory);
@@ -138,16 +138,21 @@ function SearchContent() {
           </div>
         ) : results.length > 0 ? (
           <div className="grid grid-cols-2 gap-x-6 gap-y-16 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 animate-in fade-in duration-700">
-            {results.map((deck) => (
-              <DeckCard 
-                key={deck.id} 
-                deck={deck} 
-                onClick={(d) => {
-                  setSelectedDeck(d);
-                  setIsModalOpen(true);
-                }} 
-              />
-            ))}
+            {results.map((deck: any) => {
+              const progress = deck.user_deck_progress?.[0];
+              const mastery = progress ? Math.min(100, Math.max(0, ((progress.ease - 1.3) / (5.0 - 1.3)) * 100)) : undefined;
+              
+              return (
+                <DeckCard 
+                  key={deck.id} 
+                  deck={{ ...deck, mastery }} 
+                  onClick={(d) => {
+                    setSelectedDeck(d);
+                    setIsModalOpen(true);
+                  }} 
+                />
+              );
+            })}
           </div>
         ) : query ? (
           <div className="py-40 text-center space-y-8">

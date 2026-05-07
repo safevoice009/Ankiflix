@@ -2,6 +2,7 @@ import { Play, Info } from "lucide-react";
 import Image from "next/image";
 import DiscoveryFeed from "@/components/DiscoveryFeed";
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,6 +12,9 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
+  const serverSupabase = await createClient();
+  const { data: { user } } = await serverSupabase.auth.getUser();
+
   // Fetch categories with their decks
   const { data: categories } = await supabase
     .from('categories')
@@ -21,6 +25,24 @@ export default async function Home() {
     .select('*')
     .order('ranking', { ascending: false })
     .limit(10);
+
+  // Fetch user SRS progress if logged in
+  let userProgress = null;
+  let highestPriorityDeck = null;
+  if (user) {
+    const { data } = await serverSupabase
+      .from('user_deck_progress')
+      .select('*, decks(*)');
+    userProgress = data;
+
+    if (data && data.length > 0) {
+      // Find most overdue deck
+      const overdue = [...data].sort((a, b) => 
+        new Date(a.next_review).getTime() - new Date(b.next_review).getTime()
+      );
+      highestPriorityDeck = overdue[0].decks;
+    }
+  }
 
   return (
     <div className="relative min-h-screen">
@@ -62,15 +84,33 @@ export default async function Home() {
               
               <div className="space-y-4">
                 <h1 className="font-heading text-[12vw] font-black tracking-tighter md:text-8xl lg:text-9xl leading-[0.8] text-white uppercase italic">
-                  THE <span className="text-primary not-italic">ULTIMATE</span> <br />
-                  <span className="text-white">PREMIERE</span> <br />
-                  OF ACADEMIA
+                  {highestPriorityDeck ? (
+                    <>
+                      DUE FOR <span className="text-primary not-italic">REVIEW</span> <br />
+                      <span className="text-white">{highestPriorityDeck.title}</span>
+                    </>
+                  ) : (
+                    <>
+                      THE <span className="text-primary not-italic">ULTIMATE</span> <br />
+                      <span className="text-white">PREMIERE</span> <br />
+                      OF ACADEMIA
+                    </>
+                  )}
                 </h1>
               </div>
               
               <p className="text-lg text-white/60 md:text-2xl max-w-2xl font-medium font-sans leading-relaxed">
-                Streamline your mastery. Access the world's most high-authority Anki libraries curated for the 
-                top 1% of Medical, Law, and Engineering scholars. 
+                {highestPriorityDeck ? (
+                  <>
+                    Your memory is fading on this high-authority asset. 
+                    Re-establish mastery now to maintain your 1% performance edge.
+                  </>
+                ) : (
+                  <>
+                    Streamline your mastery. Access the world's most high-authority Anki libraries curated for the 
+                    top 1% of Medical, Law, and Engineering scholars. 
+                  </>
+                )}
               </p>
               
               <div className="flex flex-wrap items-center gap-6 pt-10">
@@ -99,6 +139,7 @@ export default async function Home() {
         <DiscoveryFeed 
           categories={(categories as any) || []} 
           trendingDecks={(trendingDecks as any) || []} 
+          userProgress={(userProgress as any) || []}
         />
       </section>
     </div>

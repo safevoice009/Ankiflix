@@ -14,6 +14,7 @@ interface Deck {
   thumbnail_url?: string;
   ranking?: number;
   total_cards?: number;
+  mastery?: number; // 0 to 100
 }
 
 interface DeckCardProps {
@@ -59,6 +60,16 @@ export default function DeckCard({ deck, onClick }: DeckCardProps) {
             </Badge>
           )}
         </div>
+
+        {/* Netflix-style Progress Bar */}
+        {deck.mastery !== undefined && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+            <div 
+              className="h-full bg-primary transition-all duration-1000" 
+              style={{ width: `${deck.mastery}%` }} 
+            />
+          </div>
+        )}
       </AspectRatio>
 
       <AnimatePresence>

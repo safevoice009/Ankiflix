@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DeckCard from "./DeckCard";
 
@@ -18,9 +18,10 @@ interface DeckRowProps {
   title: string;
   decks: Deck[];
   onDeckClick: (deck: Deck) => void;
+  isSpecial?: boolean;
 }
 
-export default function DeckRow({ title, decks, onDeckClick }: DeckRowProps) {
+export default function DeckRow({ title, decks, onDeckClick, isSpecial }: DeckRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [isMoved, setIsMoved] = useState(false);
 
@@ -35,10 +36,25 @@ export default function DeckRow({ title, decks, onDeckClick }: DeckRowProps) {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 group/row relative z-10 -mt-24 md:-mt-32 pb-12">
-      <h2 className="px-4 text-xl font-black text-[#e5e5e5] transition duration-200 hover:text-white md:px-12 md:text-3xl font-heading tracking-tight">
-        {title}
-      </h2>
+    <div className={cn(
+      "space-y-4 md:space-y-6 group/row relative z-10 -mt-24 md:-mt-32 pb-12",
+      isSpecial && "relative before:absolute before:inset-0 before:bg-primary/5 before:pointer-events-none"
+    )}>
+      <div className="flex items-center space-x-3 px-4 md:px-12">
+        {isSpecial && (
+          <div className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+          </div>
+        )}
+        <h2 className={cn(
+          "text-xl font-black transition duration-200 hover:text-white md:text-3xl font-heading tracking-tight",
+          isSpecial ? "text-primary" : "text-[#e5e5e5]"
+        )}>
+          {title}
+        </h2>
+        {isSpecial && <Sparkles className="h-5 w-5 text-primary/50 animate-pulse" />}
+      </div>
       <div className="relative group">
         <div 
           className={cn(

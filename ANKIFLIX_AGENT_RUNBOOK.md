@@ -1,29 +1,25 @@
-# ANKIFLIX AGENT RUNBOOK v2.0
+# ANKIFLIX AGENT RUNBOOK v2.1 (SRS UPDATE)
 > Complete build, upgrade, and maintenance instructions for any AI agent working on the Ankiflix platform.
 > Read EVERY section before executing. Do NOT skip sections. Do NOT hallucinate APIs.
 
 ---
 
 ## 0. WHAT IS ANKIFLIX?
-Ankiflix is a **Netflix-style web platform** for discovering, browsing, and downloading Anki flashcard decks. Think "Netflix UI for Anki shared decks". Users can:
-- Browse curated decks by category (Medical, Law, Languages, Coding, etc.)
-- Search decks in real-time
-- Click a deck to see a modal with details
-- Click Download → go to AnkiWeb or direct `.apkg` file
-- (Future) Sign in, save favorites, rate decks
+Ankiflix is a **Netflix-style personalized learning platform** for discovering and mastering Anki flashcard decks. Unlike a generic directory, it uses Spaced Repetition (SRS) to drive the discovery feed.
+- **Due for Review**: Personal row for overdue decks (SM-2 logic).
+- **Mastered Intelligence**: Showcases high-retention assets.
+- **Personalized Hero**: Features the user's most urgent study deck.
+- **Cinematic Experience**: High-authority dark mode, glassmorphism, and smooth motion.
 
 ---
 
 ## 1. TECH STACK (DO NOT CHANGE)
-- **Framework**: Next.js 16+ (App Router) — read `node_modules/next/dist/docs/` before using any Next.js API
-- **Styling**: Tailwind CSS v4 + shadcn/ui components
+- **Framework**: Next.js 15+ (App Router)
+- **Styling**: Tailwind CSS v4 + shadcn/ui
 - **Animations**: Framer Motion
 - **Icons**: lucide-react
 - **Database**: Supabase (PostgreSQL) — project ID: `ncaalhdosocuutbjcjtd`
-- **Hosting**: Vercel — project: `ankiflix` under `apexs-projects-3d0f841e`
-- **Repo**: `https://github.com/safevoice009/Ankiflix`
-- **Font**: Inter (Google Fonts, already configured)
-- **Color**: Primary = `#E50914` (Netflix red), Background = `#141414`, Card = `#181818`
+- **Logic**: SM-2 Algorithm (SM2) in `lib/srs-logic.ts`
 
 ---
 
@@ -51,6 +47,22 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 ---
 
 ## 3. DATABASE SCHEMA
+
+### Table: `user_deck_progress` (SRS State)
+```sql
+CREATE TABLE user_deck_progress (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  deck_id UUID REFERENCES decks(id) ON DELETE CASCADE,
+  interval INTEGER DEFAULT 0,
+  repetition INTEGER DEFAULT 0,
+  ease NUMERIC DEFAULT 2.5,
+  next_review TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, deck_id)
+);
+```
 
 ### Table: `categories`
 ```sql
@@ -136,7 +148,8 @@ ankiflix/
 │   ├── DeckModal.tsx       # Deck detail popup
 │   └── ui/                 # shadcn/ui primitives
 ├── lib/
-│   └── supabase.ts         # Supabase client
+│   ├── supabase.ts         # Supabase client
+│   └── srs-logic.ts        # SM-2 Implementation
 ├── public/
 │   └── hero-bg.png         # Hero background image
 ├── scripts/
@@ -162,189 +175,22 @@ ankiflix/
 
 ---
 
-## 6. PRIORITY UPGRADE ROADMAP
+## 6. PERSONALIZED DISCOVERY ARCHITECTURE
 
-### PHASE A — UX OVERHAUL (Do First, Most Impactful)
+### The Discovery Engine (`DiscoveryFeed.tsx`)
+The feed is no longer static. It performs a real-time join between `decks` and `user_deck_progress`:
+1. **Filter Due**: `next_review <= NOW()` -> "Due for Review" row.
+2. **Filter Mastered**: `ease >= 2.8` -> "Mastered Intelligence" row.
+3. **In Progress**: Active decks not yet mastered or due -> "In Progress" row.
 
-#### A1. Replace hero background with a real animated gradient + particles
-- Remove dependency on `/hero-bg.png` (it may not exist or look bad)
-- Use a CSS animated gradient: deep dark blues/purples with a red accent shimmer
-- Add floating card particles using pure CSS `@keyframes`
-- Hero must look CINEMATIC on first load
+### The Mastery Indicator (`DeckCard.tsx`)
+Every card in an SRS row displays a **Netflix-style red progress bar** at the bottom.
+- Formula: `(ease - 1.3) / (5.0 - 1.3) * 100`
 
-#### A2. Redesign Deck Cards (Most visible problem)
-Current cards are basic `div` with background-image. Replace with:
-```tsx
-// Each card should have:
-// - Aspect ratio 16:9 thumbnail (with fallback gradient if no image)
-// - Category badge (top-left)
-// - Card count badge (top-right)
-// - On hover: scale 1.05, show overlay with title + Download button
-// - Smooth shadow transition
-```
-Use Unsplash category-specific images as fallback per category:
-- Medical: `https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400`
-- Law: `https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400`
-- Languages: `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400`
-- Coding: `https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400`
-- History: `https://images.unsplash.com/photo-1461344577544-4e5dc9487184?w=400`
-- Science: `https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=400`
-- Math: `https://images.unsplash.com/photo-1509228468518-180dd4864904?w=400`
-- Default: `https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400`
-
-#### A3. Make Download Button Actually Work
-In `DeckModal.tsx`, the Download button currently does nothing. Fix:
-```tsx
-// If deck.download_url exists: window.open(deck.download_url, '_blank')
-// Else if deck.anki_link exists: window.open(deck.anki_link, '_blank')  
-// Else: window.open(`https://ankiweb.net/shared/decks?search=${encodeURIComponent(deck.title)}`, '_blank')
-```
-
-#### A4. Add Category Browse Pages
-Create `app/categories/[slug]/page.tsx`:
-- Fetches all decks for that category from Supabase
-- Shows a grid of deck cards (not horizontal scroll, full grid)
-- Has a hero banner with category name and count
-
-#### A5. Add Individual Deck Pages
-Create `app/decks/[id]/page.tsx`:
-- Full page view (not modal) for SEO and sharing
-- Shows full description, all tags, download stats
-- "Download Now" button → direct link to AnkiWeb
-
-#### A6. Navbar Mobile Menu
-Current navbar hides all links on mobile. Add a hamburger menu:
-- Use `Sheet` from shadcn/ui
-- Show Home, Decks, Categories, New & Popular links
-- Keep search icon visible always
-
----
-
-### PHASE B — DATA & CONTENT
-
-#### B1. Seed More Decks (Run this SQL in Supabase)
-```sql
--- First ensure categories exist
-INSERT INTO categories (name, slug, description) VALUES
-  ('Medical', 'medical', 'USMLE, MBBS, NEET PG, Anatomy, Pharmacology'),
-  ('Law', 'law', 'Bar Exam, Constitutional Law, Criminal Law'),
-  ('Languages', 'languages', 'Spanish, French, Japanese, Mandarin, German'),
-  ('Coding', 'coding', 'Python, JavaScript, Data Structures, Algorithms'),
-  ('History', 'history', 'World History, US History, Ancient Civilizations'),
-  ('Science', 'science', 'Physics, Chemistry, Biology, Earth Science'),
-  ('Mathematics', 'mathematics', 'Calculus, Linear Algebra, Statistics'),
-  ('Competitive Exams', 'competitive', 'GRE, GMAT, SAT, IELTS, TOEFL')
-ON CONFLICT (slug) DO NOTHING;
-```
-
-#### B2. Improve Scraper (`scripts/scraper.py`)
-AnkiWeb URL pattern for shared decks:
-- List: `https://ankiweb.net/shared/decks?search=TERM`
-- Info page: `https://ankiweb.net/shared/info/DECK_ID`
-- Download: `https://ankiweb.net/shared/download/DECK_ID` (POST request needed)
-
-The scraper should:
-1. Search AnkiWeb for each category keyword
-2. Parse title, card count, rating, description from info page
-3. Use Unsplash category fallback for thumbnail
-4. Upsert into `decks` table via Supabase Python SDK
-5. Run daily via GitHub Actions (`.github/workflows/scrape.yml`)
-
-#### B3. Add AnkiWeb Direct Links
-Every deck must have `anki_link` = `https://ankiweb.net/shared/info/{ankiweb_id}`.
-The download button opens this link. AnkiWeb handles the actual download.
-Do NOT try to proxy or re-host `.apkg` files. Just redirect users.
-
----
-
-### PHASE C — AUTHENTICATION (Supabase Auth)
-
-#### C1. Setup Auth
-```tsx
-// lib/supabase-server.ts — for server components
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-
-export function createClient() {
-  const cookieStore = cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: (c) => c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } }
-  )
-}
-```
-
-#### C2. Add Login/Signup Pages
-- `app/auth/login/page.tsx` — Email + Password + Google OAuth
-- `app/auth/callback/route.ts` — Supabase auth callback handler
-- Use `@supabase/ssr` package (install: `npm install @supabase/ssr`)
-
-#### C3. User Profile & Favorites
-- Add "Add to List" (favorites) button in DeckModal — requires auth
-- `app/profile/page.tsx` — shows user's saved decks
-- If not logged in, show sign-in prompt when clicking Add to List
-
----
-
-### PHASE D — SEARCH IMPROVEMENTS
-
-#### D1. Real-time Search with Debounce
-Current search requires pressing Enter. Improve:
-- Add 300ms debounce
-- Show results dropdown below search bar as user types
-- Show top 5 results in dropdown, "See all" link
-
-#### D2. Full-Text Search
-Enable Postgres full-text search:
-```sql
-ALTER TABLE decks ADD COLUMN search_vector TSVECTOR 
-  GENERATED ALWAYS AS (to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))) STORED;
-CREATE INDEX decks_search_idx ON decks USING GIN(search_vector);
-```
-Query:
-```sql
-SELECT * FROM decks WHERE search_vector @@ plainto_tsquery('english', $1);
-```
-
-#### D3. Filter & Sort on Search Page
-Add filter controls:
-- Sort by: Most Popular, Newest, Highest Rated
-- Filter by: Category
-- Filter by: Card count range
-
----
-
-### PHASE E — PERFORMANCE & POLISH
-
-#### E1. Image Optimization
-- All deck thumbnails should use `next/image` with `width={400} height={225}` (16:9)
-- Add `placeholder="blur"` with a dark blurDataURL
-- Add `loading="lazy"` for cards below the fold
-
-#### E2. Loading Skeletons
-Create `components/DeckRowSkeleton.tsx`:
-- Show 6 skeleton cards while data loads
-- Use `animate-pulse` with dark gray cards
-
-#### E3. Error Boundary
-Create `app/error.tsx`:
-```tsx
-'use client'
-export default function Error({ reset }: { reset: () => void }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center text-center">
-      <div>
-        <h2 className="text-2xl font-bold text-white">Something went wrong</h2>
-        <button onClick={reset} className="mt-4 px-6 py-2 bg-primary text-white rounded">Try Again</button>
-      </div>
-    </div>
-  )
-}
-```
-
-#### E4. Not Found Page
-Create `app/not-found.tsx` with a Netflix-style "404 - Page Not Found" page.
+### The Study Session Flow (`DeckModal.tsx`)
+1. **Start Session**: Simulates a neural sync for 3 seconds (Cinematic Loader).
+2. **Performance Assessment**: Shows 5 rating buttons: Again, Hard, Good, Easy, Perfect.
+3. **Backend Sync**: Updates `user_deck_progress` using SM-2 calculations.
 
 ---
 
@@ -365,12 +211,6 @@ Border:      rgba(255,255,255,0.1)
 - Modal open: slide up + fade in
 - Page transitions: fade in 300ms
 - Navbar: transitions from transparent to solid `#141414` on scroll
-
-### Layout Rules:
-- Max content width: `1400px` centered
-- Horizontal padding: `px-4 md:px-12`
-- Row gap between deck rows: `space-y-12`
-- Cards per row: 2 mobile, 3 tablet, 5 desktop (min-w approach)
 
 ---
 
@@ -522,16 +362,17 @@ const nextConfig = {
 
 ---
 
-## 14. VISION STATEMENT (Keep This In Mind Always)
+## 14. VISION STATEMENT (SRS VERSION)
 
-Ankiflix is NOT just a list of links. It is a **premium discovery experience**.
+Ankiflix is the **Cinematic Command Center** for your brain. 
 
-When a student opens Ankiflix, they should feel like they opened Netflix — cinematic, beautiful, fast, and immediately useful. They should be able to find the best Anki deck for their exam in under 10 seconds, click Download, and get it from AnkiWeb instantly.
+When a student opens Ankiflix, they don't see a wall of text. They see a **High-Authority Intelligence Premiere**. The most urgent decks glow with red indicators. Their mastery level is visible at a glance. Studying is no longer a chore; it's a high-production experience.
 
 Every design decision must serve this goal:
-- **Cinematic** = dark background, rich gradients, smooth animations
-- **Curated** = ranked decks, quality thumbnails, clear metadata
-- **Fast** = server-side rendering, lazy loading, minimal JavaScript
+- **Cinematic Mastery** = The UI feels like a premium streaming service.
+- **Academic Authority** = Data-driven discovery via SRS.
+- **Frictionless Flow** = From discovery to download in under 10 seconds.
+- **Neural Sync** = The platform tracks your memory states automatically.
 - **Trustworthy** = verified deck sources (AnkiWeb only), honest card counts
 
 The primary user is a **medical student** preparing for USMLE/NEET PG. Secondary users are law students, language learners, and coders. Design for the medical student first.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import DeckRow from "@/components/DeckRow";
 import DeckModal from "@/components/DeckModal";
@@ -16,7 +16,7 @@ interface Deck {
   total_cards?: number;
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q");
   const [results, setResults] = useState<Deck[]>([]);
@@ -69,8 +69,11 @@ export default function SearchPage() {
                   className="aspect-video w-full bg-cover bg-center"
                   style={{ backgroundImage: `url(${deck.thumbnail_url})` }}
                 />
+                <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
+                  <span className="text-white font-medium">View Deck</span>
+                </div>
                 <div className="p-2">
-                  <h3 className="text-sm font-medium">{deck.title}</h3>
+                   <h3 className="text-sm font-medium truncate">{deck.title}</h3>
                 </div>
               </div>
             ))}
@@ -88,5 +91,20 @@ export default function SearchPage() {
         onClose={() => setIsModalOpen(false)} 
       />
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen pt-32 px-4 md:px-12">
+        <Navbar />
+        <div className="flex justify-center py-20">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }

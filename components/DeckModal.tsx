@@ -32,6 +32,13 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl overflow-hidden rounded-md bg-[#181818] p-0 text-foreground border-none">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{deck.title}</DialogTitle>
+          <DialogDescription>
+            {deck.description || "Details about the selected Anki deck."}
+          </DialogDescription>
+        </DialogHeader>
+        
         <div className="relative h-64 w-full">
           <div 
             className="absolute inset-0 bg-cover bg-center"

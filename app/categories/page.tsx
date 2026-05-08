@@ -39,7 +39,7 @@ export default async function CategoriesPage() {
           {categories?.map((category) => (
             <Link 
               key={category.id} 
-              href={`/categories/${category.slug}`}
+              href={`/categories/${category.slug || 'unknown'}`}
               className="group relative overflow-hidden rounded-2xl bg-[#181818] transition-all duration-500 hover:scale-[1.03] hover:shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/5"
             >
               <AspectRatio ratio={16 / 9}>

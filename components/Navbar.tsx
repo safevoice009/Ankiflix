@@ -16,12 +16,25 @@ import {
 import { supabase } from "@/lib/supabase";
 
 export default function Navbar() {
+  const [user, setUser] = useState<any>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -209,14 +222,30 @@ export default function Navbar() {
             <span className="absolute top-0 right-0 h-2 w-2 bg-primary rounded-full border border-[#141414]" />
           </button>
           
-          <div className="flex items-center space-x-3 cursor-pointer group px-2 py-1 rounded-md transition hover:bg-white/5">
-            <div className="h-9 w-9 overflow-hidden rounded-md bg-[#333] transition-all group-hover:ring-2 ring-primary/50 shadow-lg">
-              <User className="h-full w-full p-1.5 text-white/70" />
-            </div>
-            <div className="hidden border-l border-white/10 pl-3 text-[10px] font-black md:block tracking-[0.2em] text-white/40 uppercase">
-              PREMIUM
-            </div>
-          </div>
+          {user ? (
+            <Link 
+              href="/profile" 
+              className="flex items-center space-x-3 cursor-pointer group px-2 py-1 rounded-md transition hover:bg-white/5"
+            >
+              <div className="h-9 w-9 overflow-hidden rounded-md bg-[#333] transition-all group-hover:ring-2 ring-primary/50 shadow-lg">
+                {user.user_metadata?.avatar_url ? (
+                  <img src={user.user_metadata.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <User className="h-full w-full p-1.5 text-white/70" />
+                )}
+              </div>
+              <div className="hidden border-l border-white/10 pl-3 text-[10px] font-black md:block tracking-[0.2em] text-white/40 uppercase">
+                {user.email?.split('@')[0]}
+              </div>
+            </Link>
+          ) : (
+            <Link 
+              href="/auth/login"
+              className="px-6 py-2 rounded-full bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300 shadow-[0_10px_20px_rgba(229,9,20,0.3)]"
+            >
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
     </nav>

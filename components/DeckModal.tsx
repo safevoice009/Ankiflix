@@ -12,6 +12,7 @@ import { Play, Plus, ThumbsUp, X, Check, Loader2, Sparkles, BrainCircuit, Zap } 
 import Image from "next/image";
 import FavoriteButton from "./FavoriteButton";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
 import { calculateNextReview, DeckProgress } from "@/lib/srs-logic";
@@ -37,6 +38,7 @@ interface DeckModalProps {
 
 
 export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
+  const router = useRouter();
   const [isReviewing, setIsReviewing] = useState(false);
   const [showRatings, setShowRatings] = useState(false);
   const [progress, setProgress] = useState<DeckProgress | null>(null);
@@ -88,7 +90,20 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      toast.error("Please log in to track progress");
+      toast((t) => (
+        <span className="flex items-center space-x-3">
+          <span className="text-[10px] font-black uppercase tracking-widest">Sign in to track progress</span>
+          <button 
+            onClick={() => {
+              toast.dismiss(t.id);
+              router.push('/auth/login');
+            }}
+            className="bg-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg"
+          >
+            Log In
+          </button>
+        </span>
+      ), { duration: 5000 });
       setIsLoading(false);
       return;
     }

@@ -18,7 +18,7 @@ Ankiflix is a **Netflix-style personalized learning platform** for discovering a
 - **Styling**: Tailwind CSS v4 + shadcn/ui
 - **Animations**: Framer Motion
 - **Icons**: lucide-react
-- **Database**: Supabase (PostgreSQL) — project ID: `ncaalhdosocuutbjcjtd`
+- **Database**: Supabase (PostgreSQL) — project ID: `nkkrezwvxxosasvmvlft`
 - **Logic**: SM-2 Algorithm (SM2) in `lib/srs-logic.ts`
 
 ---
@@ -26,11 +26,11 @@ Ankiflix is a **Netflix-style personalized learning platform** for discovering a
 ## 2. ENVIRONMENT & CREDENTIALS
 File: `c:\Users\unbou\ankiflix\.env.local`
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://ncaalhdosocuutbjcjtd.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jYWFsaGRvc29jdXV0YmpjanRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNDUxODcsImV4cCI6MjA5MzcyMTE4N30.8r8Y5BfAy8YEqHmCDnuS-dCUdWxM_HXR1ML5IVDk_Yo
+NEXT_PUBLIC_SUPABASE_URL=https://nkkrezwvxxosasvmvlft.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY_HERE
 ```
 
-**Supabase MCP Server**: Already configured. Project ref = `ncaalhdosocuutbjcjtd`
+**Supabase MCP Server**: Already configured. Project ref = `nkkrezwvxxosasvmvlft`
 **Vercel**: Logged in via Chrome browser (use browser_subagent to interact)
 **GitHub**: `safevoice009/Ankiflix` — push via `git push origin main`
 
@@ -172,9 +172,12 @@ ankiflix/
 3. ✅ Hero text invisible on mobile → Fixed with `justify-end pb-20` on mobile, `justify-center` on md+
 4. ✅ Vercel 403/404 on production → Was caused by custom build override `rm -rf supabase && npm run build`. Removed override. Standard Next.js build now works.
 5. ✅ Git push rejected → Fixed with `git pull --rebase origin main` before pushing
-6. ✅ Hero/Feed Overlap → Resolved by adding `pb-32` to Hero and increasing `z-index` to 30 on `DiscoveryFeed`.
-7. ✅ Redundant Navbar → Removed duplicate Navbar from Search page fallback.
-8. ✅ Neural Sync Visual → Enhanced study simulation with a cinematic scanning line and brain circuit animation.
+7. ✅ Hero/Feed Overlap → Resolved by adding `pb-32` to Hero and increasing `z-index` to 30 on `DiscoveryFeed`.
+8. ✅ Redundant Navbar → Removed duplicate Navbar from Search page fallback.
+9. ✅ Neural Sync Visual → Enhanced study simulation with a cinematic scanning line and brain circuit animation.
+10. ✅ Skeleton Loading → Replaced generic spinners with Netflix-style skeleton rows for smoother entry.
+11. ✅ Community Submissions → Enabled users to propose new decks via `/submit`.
+12. ✅ Related Intelligence → Added "More Like This" row in DeckModal for discovery flow.
 
 ---
 

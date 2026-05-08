@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
 import { calculateNextReview, DeckProgress } from "@/lib/srs-logic";
 import { getIntelligenceInsight } from "@/lib/gemini";
+import RelatedDecks from "./RelatedDecks";
 
 interface Deck {
   id: string;
@@ -296,6 +297,21 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
               <p className="text-xl leading-relaxed text-white/90 font-sans">
                 {deck.description || "This premium Anki deck has been scientifically designed to optimize your long-term retention and exam performance. It includes high-yield facts, clear diagrams, and comprehensive coverage of the subject matter."}
               </p>
+            </div>
+
+            {/* Related Content */}
+            <div className="pt-12 space-y-8">
+              <div className="flex items-center space-x-4">
+                <div className="h-px flex-1 bg-white/5" />
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 whitespace-nowrap">More Like This Intelligence</h3>
+                <div className="h-px flex-1 bg-white/5" />
+              </div>
+              
+              <RelatedDecks deckId={deck.id} categoryId={(deck as any).category_id} onDeckClick={(d) => {
+                // Since we're in a modal, we might want to switch the deck
+                // For simplicity, we just trigger the click
+                window.location.href = `/search?q=${encodeURIComponent(d.title)}`;
+              }} />
             </div>
           </div>
 

@@ -16,9 +16,11 @@ export default async function Home() {
   const { data: { user } } = await serverSupabase.auth.getUser();
 
   // Fetch categories with their decks
-  const { data: categories } = await supabase
+  const { data: categoriesData } = await supabase
     .from('categories')
-    .select('id, name, decks(*)');
+    .select('id, name, slug, decks(*)');
+
+  const categories = categoriesData?.filter(cat => cat.decks && cat.decks.length > 0) || [];
 
   const { data: trendingDecks } = await supabase
     .from('decks')

@@ -29,8 +29,8 @@ export default function Navbar() {
         setIsSearching(true);
         const { data } = await supabase
           .from("decks")
-          .select("id, title, thumbnail_url")
-          .ilike("title", `%${searchQuery}%`)
+          .select("id, title, thumbnail_url, categories!inner(name)")
+          .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,categories.name.ilike.%${searchQuery}%`)
           .limit(5);
         setSearchResults(data || []);
         setIsSearching(false);
@@ -62,6 +62,7 @@ export default function Navbar() {
     { name: "Decks", href: "/decks" },
     { name: "Categories", href: "/categories" },
     { name: "Leaderboard", href: "/leaderboard" },
+    { name: "Submit Intelligence", href: "/submit" },
     { name: "New & Popular", href: "/new" },
   ];
 

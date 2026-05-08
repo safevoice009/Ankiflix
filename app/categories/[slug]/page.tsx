@@ -59,8 +59,19 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
   }, [params.slug]);
 
   if (loading) return (
-    <div className="min-h-screen bg-[#141414] flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    <div className="min-h-screen bg-[#141414] pt-40 px-4 md:px-12">
+      <div className="max-w-[1400px] mx-auto space-y-20">
+        <div className="space-y-6">
+          <div className="h-4 w-32 bg-white/5 animate-pulse rounded-md" />
+          <div className="h-24 w-3/4 bg-white/5 animate-pulse rounded-md" />
+          <div className="h-6 w-1/2 bg-white/5 animate-pulse rounded-md" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="aspect-[16/9] bg-white/5 animate-pulse rounded-md" />
+          ))}
+        </div>
+      </div>
     </div>
   );
 

@@ -48,20 +48,25 @@ function SearchContent() {
       if (!query) return;
       setLoading(true);
 
-      let baseQuery = supabase.from("decks").select("*, user_deck_progress(*)");
-      baseQuery = baseQuery.ilike("title", `%${query}%`);
+      // Search in decks title and description
+      let deckQuery = supabase.from("decks").select("*, categories!inner(*), user_deck_progress(*)");
+      
+      // Use logical OR for broad search
+      deckQuery = deckQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%,categories.name.ilike.%${query}%`);
+
       if (filterCategory) {
-        baseQuery = baseQuery.eq("category_id", filterCategory);
-      }
-      if (sortBy === "ranking") {
-        baseQuery = baseQuery.order("ranking", { ascending: false });
-      } else if (sortBy === "newest") {
-        baseQuery = baseQuery.order("created_at", { ascending: false });
-      } else if (sortBy === "cards") {
-        baseQuery = baseQuery.order("total_cards", { ascending: false });
+        deckQuery = deckQuery.eq("category_id", filterCategory);
       }
 
-      const { data, error } = await baseQuery;
+      if (sortBy === "ranking") {
+        deckQuery = deckQuery.order("ranking", { ascending: false });
+      } else if (sortBy === "newest") {
+        deckQuery = deckQuery.order("created_at", { ascending: false });
+      } else if (sortBy === "cards") {
+        deckQuery = deckQuery.order("total_cards", { ascending: false });
+      }
+
+      const { data, error } = await deckQuery;
       if (!error) setResults(data || []);
       setLoading(false);
     }

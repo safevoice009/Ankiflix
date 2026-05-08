@@ -79,7 +79,7 @@ export default function DeckCard({ deck, onClick }: DeckCardProps) {
             animate={{ opacity: 1, scale: 1.2, y: -40 }}
             exit={{ opacity: 0, scale: 0.9, y: 0 }}
             transition={{ type: "spring", stiffness: 350, damping: 30 }}
-            className="absolute inset-x-[-15%] top-[-10%] z-50 h-auto min-w-[320px] rounded-xl bg-[#181818] shadow-[0_30px_60px_rgba(0,0,0,1),0_0_20px_rgba(229,9,20,0.1)] overflow-hidden border border-white/10"
+            className="absolute inset-x-[-15%] top-[-10%] z-50 h-auto min-w-[320px] rounded-xl bg-[#181818] shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(229,9,20,0.15)] overflow-hidden border border-white/20"
           >
             <AspectRatio ratio={16 / 9}>
               <div 

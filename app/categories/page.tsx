@@ -17,7 +17,8 @@ const CATEGORY_IMAGES: Record<string, string> = {
 export default async function CategoriesPage() {
   const { data: categories } = await supabase
     .from("categories")
-    .select("*, decks(count)");
+    .select("id, name, slug, description, decks(count)")
+    .order("name");
 
   return (
     <div className="min-h-screen pt-32 px-4 md:px-12 pb-20 bg-[#141414]">

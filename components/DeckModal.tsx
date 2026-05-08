@@ -8,9 +8,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Play, Plus, ThumbsUp, X, Check } from "lucide-react";
+import { Play, Plus, ThumbsUp, X, Check, Loader2, Sparkles, BrainCircuit, Zap } from "lucide-react";
 import Image from "next/image";
 import FavoriteButton from "./FavoriteButton";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "react-hot-toast";
+import { calculateNextReview, DeckProgress } from "@/lib/srs-logic";
+import { getIntelligenceInsight } from "@/lib/gemini";
 
 interface Deck {
   id: string;
@@ -28,17 +33,22 @@ interface DeckModalProps {
   onClose: () => void;
 }
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { toast } from "react-hot-toast";
-import { calculateNextReview, DeckProgress } from "@/lib/srs-logic";
-import { Loader2, Sparkles, BrainCircuit } from "lucide-react";
+
 
 export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
   const [isReviewing, setIsReviewing] = useState(false);
   const [showRatings, setShowRatings] = useState(false);
   const [progress, setProgress] = useState<DeckProgress | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
+  const handleAiSync = async () => {
+    setIsAiLoading(true);
+    const insight = await getIntelligenceInsight(deck?.title || "", deck?.description || "");
+    setAiInsight(insight);
+    setIsAiLoading(false);
+  };
 
   useEffect(() => {
     if (isOpen && deck) {
@@ -141,27 +151,53 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
             </div>
           )}
           
-          {/* Reviewing Overlay */}
           {isReviewing && !showRatings && (
             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-xl overflow-hidden">
               {/* Scanning Line */}
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-primary shadow-[0_0_20px_rgba(229,9,20,1)] animate-[scan_2s_ease-in-out_infinite]" />
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-primary shadow-[0_0_20px_rgba(229,9,20,1)] animate-scan" />
               
               <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 blur-3xl animate-pulse rounded-full" />
                 <Loader2 className="h-24 w-24 text-primary animate-spin opacity-20" />
                 <BrainCircuit className="absolute inset-0 h-24 w-24 text-primary animate-pulse m-auto" />
               </div>
               
-              <div className="mt-8 space-y-2 text-center">
+              <div className="mt-8 space-y-4 text-center max-w-md px-6">
                 <h3 className="text-4xl font-black uppercase tracking-tighter animate-pulse text-white">
                   NEURAL <span className="text-primary italic">SYNC</span>
                 </h3>
-                <div className="flex items-center justify-center space-x-2">
-                   <div className="h-1 w-12 bg-primary/20 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary animate-[progress-horizontal_3s_linear_forwards]" />
-                   </div>
-                   <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Optimizing Synaptic Path</p>
-                </div>
+                
+                {aiInsight ? (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    <p className="text-white/80 font-medium leading-relaxed italic border-l-2 border-primary pl-4 text-left">
+                      "{aiInsight}"
+                    </p>
+                    <div className="flex items-center justify-center space-x-2 text-primary">
+                      <Zap className="h-4 w-4 fill-primary" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Synaptic Path Optimized</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-center space-x-2">
+                       <div className="h-1 w-24 bg-primary/20 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary animate-progress-horizontal" />
+                       </div>
+                    </div>
+                    <button 
+                      onClick={handleAiSync}
+                      disabled={isAiLoading}
+                      className="group flex items-center space-x-3 rounded-full bg-white/10 px-8 py-3 font-black text-white border border-white/10 hover:bg-white/20 transition-all active:scale-95"
+                    >
+                      {isAiLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 text-primary group-hover:animate-pulse" />
+                      )}
+                      <span className="uppercase tracking-widest text-[10px]">Generate Intelligence Insight</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

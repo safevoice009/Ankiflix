@@ -61,6 +61,7 @@ export default function Navbar() {
     { name: "Home", href: "/" },
     { name: "Decks", href: "/decks" },
     { name: "Categories", href: "/categories" },
+    { name: "Leaderboard", href: "/leaderboard" },
     { name: "New & Popular", href: "/new" },
   ];
 

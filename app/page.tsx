@@ -47,7 +47,7 @@ export default async function Home() {
   return (
     <div className="relative min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[95vh] w-full overflow-hidden bg-cinematic-gradient">
+      <section className="relative h-[110vh] w-full overflow-hidden bg-cinematic-gradient">
         {/* Particle System */}
         <div className="absolute inset-0 z-0 overflow-hidden opacity-30">
           {[...Array(20)].map((_, i) => (
@@ -73,7 +73,7 @@ export default async function Home() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(229,9,20,0.1),transparent_50%)]" />
         </div>
 
-        <div className="relative z-10 flex h-full flex-col justify-center px-4 md:px-12">
+        <div className="relative z-40 flex h-full flex-col justify-center px-4 md:px-12 pb-96">
           <div className="max-w-[1400px] mx-auto w-full">
             <div className="max-w-4xl space-y-10 animate-fade-in pt-20">
               <div className="flex items-center space-x-3">
@@ -131,7 +131,7 @@ export default async function Home() {
         </div>
 
         {/* Bottom Fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#141414] via-[#141414]/80 to-transparent z-20" />
+        <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-[#141414] via-[#141414] to-transparent z-20" />
       </section>
 
       {/* Discovery Feed */}

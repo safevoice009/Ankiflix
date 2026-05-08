@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { Play } from "lucide-react";
-import Navbar from "@/components/Navbar";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-[#141414] flex flex-col items-center justify-center relative overflow-hidden">
-      <Navbar />
       
       {/* Background Ambience */}
       <div className="absolute inset-0 z-0">

@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -142,10 +143,26 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
           
           {/* Reviewing Overlay */}
           {isReviewing && !showRatings && (
-            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md">
-              <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
-              <h3 className="text-3xl font-black uppercase tracking-tighter animate-pulse">Syncing Intelligence...</h3>
-              <p className="text-white/60 mt-2">Simulating Neural Optimization Session</p>
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-xl overflow-hidden">
+              {/* Scanning Line */}
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-primary shadow-[0_0_20px_rgba(229,9,20,1)] animate-[scan_2s_ease-in-out_infinite]" />
+              
+              <div className="relative">
+                <Loader2 className="h-24 w-24 text-primary animate-spin opacity-20" />
+                <BrainCircuit className="absolute inset-0 h-24 w-24 text-primary animate-pulse m-auto" />
+              </div>
+              
+              <div className="mt-8 space-y-2 text-center">
+                <h3 className="text-4xl font-black uppercase tracking-tighter animate-pulse text-white">
+                  NEURAL <span className="text-primary italic">SYNC</span>
+                </h3>
+                <div className="flex items-center justify-center space-x-2">
+                   <div className="h-1 w-12 bg-primary/20 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary animate-[progress-horizontal_3s_linear_forwards]" />
+                   </div>
+                   <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Optimizing Synaptic Path</p>
+                </div>
+              </div>
             </div>
           )}
 

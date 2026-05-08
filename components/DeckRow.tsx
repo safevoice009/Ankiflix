@@ -37,7 +37,7 @@ export default function DeckRow({ title, decks, onDeckClick, isSpecial }: DeckRo
 
   return (
     <div className={cn(
-      "space-y-4 md:space-y-6 group/row relative z-10 -mt-24 md:-mt-32 pb-12",
+      "space-y-4 md:space-y-6 group/row relative z-10 pb-12 transition-all duration-500",
       isSpecial && "relative before:absolute before:inset-0 before:bg-primary/5 before:pointer-events-none"
     )}>
       <div className="flex items-center space-x-3 px-4 md:px-12">
@@ -55,10 +55,12 @@ export default function DeckRow({ title, decks, onDeckClick, isSpecial }: DeckRo
         </h2>
         {isSpecial && <Sparkles className="h-5 w-5 text-primary/50 animate-pulse" />}
       </div>
+
       <div className="relative group">
+        {/* Left Scroll Trigger */}
         <div 
           className={cn(
-            "absolute left-0 top-0 bottom-0 z-40 w-12 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-sm",
+            "absolute left-0 top-0 bottom-0 z-40 w-12 md:w-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer hover:bg-black/50 bg-gradient-to-r from-[#141414] to-transparent",
             !isMoved && "hidden"
           )}
           onClick={() => handleClick("left")}
@@ -68,7 +70,7 @@ export default function DeckRow({ title, decks, onDeckClick, isSpecial }: DeckRo
 
         <div
           ref={rowRef}
-          className="flex items-center space-x-2 overflow-x-scroll scrollbar-hide md:space-x-4 md:px-12 pb-8 pt-4 snap-x snap-proximity"
+          className="flex items-center space-x-2 overflow-x-scroll no-scrollbar md:space-x-4 md:px-12 pb-8 pt-4 snap-x snap-proximity"
         >
           {decks.map((deck) => (
             <div key={deck.id} className="snap-start">
@@ -80,8 +82,9 @@ export default function DeckRow({ title, decks, onDeckClick, isSpecial }: DeckRo
           ))}
         </div>
 
+        {/* Right Scroll Trigger */}
         <div 
-          className="absolute right-0 top-0 bottom-0 z-40 w-12 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-sm"
+          className="absolute right-0 top-0 bottom-0 z-40 w-12 md:w-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer hover:bg-black/50 bg-gradient-to-l from-[#141414] to-transparent"
           onClick={() => handleClick("right")}
         >
           <ChevronRight className="h-10 w-10 text-white transition hover:scale-125" />

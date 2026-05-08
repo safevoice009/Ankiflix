@@ -98,17 +98,28 @@ def scrape_ankiweb_search(search_term, category_id, category_slug):
         print(f"Error during search scraping for {search_term}: {e}")
 
 if __name__ == "__main__":
+    print("--- ANKIFLIX SCRAPER START ---")
+    start_time = time.time()
+    
     # 1. Fetch categories from Supabase
     try:
         res = supabase.table("categories").select("*").execute()
         categories = res.data
         if not categories:
-            print("No categories found in Supabase. Please seed them first.")
+            print("[CRITICAL] No categories found in Supabase. Intelligence seeding cannot proceed.")
             exit(0)
             
+        print(f"[INFO] Found {len(categories)} categories. Initiating sequence...")
+        
         for cat in categories:
-            # We use name as search term and slug for image selection
+            print(f"\n[CATEGORY] Analyzing field: {cat['name']}...")
             scrape_ankiweb_search(cat["name"], cat["id"], cat["slug"])
             
+        duration = time.time() - start_time
+        print(f"\n--- SCRAPER COMPLETE ---")
+        print(f"Total duration: {duration:.2f} seconds")
+        print("Status: Intelligence Synchronized.")
+            
     except Exception as e:
-        print(f"Error fetching categories: {e}")
+        print(f"[ERROR] Fatal exception during category fetch: {e}")
+

@@ -1,5 +1,4 @@
 import { supabase } from "@/lib/supabase";
-import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 
@@ -22,7 +21,6 @@ export default async function CategoriesPage() {
 
   return (
     <div className="min-h-screen pt-32 px-4 md:px-12 pb-20 bg-[#141414]">
-      <Navbar />
       
       <div className="max-w-[1400px] mx-auto space-y-16">
         <div className="relative">

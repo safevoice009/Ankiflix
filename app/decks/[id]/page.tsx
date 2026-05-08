@@ -5,7 +5,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import FavoriteButton from "@/components/FavoriteButton";
-import Navbar from "@/components/Navbar";
 
 interface Props {
   params: { id: string };
@@ -40,7 +39,6 @@ export default async function DeckPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[#141414] text-white selection:bg-primary/30">
-      <Navbar />
       
       {/* Cinematic Hero */}
       <div className="relative h-[70vh] w-full overflow-hidden">

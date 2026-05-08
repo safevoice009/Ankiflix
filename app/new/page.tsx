@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DeckCard from "@/components/DeckCard";
 import DeckModal from "@/components/DeckModal";
-import Navbar from "@/components/Navbar";
 import { Sparkles } from "lucide-react";
 
 export default function NewAndPopularPage() {
@@ -29,7 +28,6 @@ export default function NewAndPopularPage() {
 
   return (
     <div className="min-h-screen bg-[#141414] pt-40 px-4 md:px-12 pb-32">
-      <Navbar />
       
       <div className="max-w-[1400px] mx-auto space-y-12">
         <div className="space-y-4 border-b border-white/5 pb-12">

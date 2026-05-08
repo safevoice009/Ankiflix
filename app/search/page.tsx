@@ -5,7 +5,6 @@ import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import DeckCard from "@/components/DeckCard";
 import DeckModal from "@/components/DeckModal";
-import Navbar from "@/components/Navbar";
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import {
   DropdownMenu,
@@ -71,7 +70,6 @@ function SearchContent() {
 
   return (
     <div className="min-h-screen bg-[#141414] pt-40 px-4 md:px-12 pb-32">
-      <Navbar />
       
       <div className="max-w-[1400px] mx-auto space-y-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/5 pb-12">
@@ -183,7 +181,6 @@ export default function SearchPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen pt-32 px-4 md:px-12">
-        <Navbar />
         <div className="flex justify-center py-20">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>

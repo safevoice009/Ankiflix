@@ -172,6 +172,9 @@ ankiflix/
 3. ✅ Hero text invisible on mobile → Fixed with `justify-end pb-20` on mobile, `justify-center` on md+
 4. ✅ Vercel 403/404 on production → Was caused by custom build override `rm -rf supabase && npm run build`. Removed override. Standard Next.js build now works.
 5. ✅ Git push rejected → Fixed with `git pull --rebase origin main` before pushing
+6. ✅ Hero/Feed Overlap → Resolved by adding `pb-32` to Hero and increasing `z-index` to 30 on `DiscoveryFeed`.
+7. ✅ Redundant Navbar → Removed duplicate Navbar from Search page fallback.
+8. ✅ Neural Sync Visual → Enhanced study simulation with a cinematic scanning line and brain circuit animation.
 
 ---
 

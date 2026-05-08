@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DeckCard from "@/components/DeckCard";
-import Navbar from "@/components/Navbar";
 import DeckModal from "@/components/DeckModal";
 import { notFound } from "next/navigation";
 
@@ -69,7 +68,6 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
 
   return (
     <div className="min-h-screen bg-[#141414] text-white">
-      <Navbar />
       
       {/* Cinematic Header */}
       <div className="relative pt-40 pb-20 px-4 md:px-12 overflow-hidden">

@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
-import Navbar from "@/components/Navbar";
 import ProfileFeed from "@/components/ProfileFeed";
 
 export default async function ProfilePage() {
@@ -24,7 +23,6 @@ export default async function ProfilePage() {
 
   return (
     <div className="min-h-screen pt-32 px-4 md:px-12 pb-20">
-      <Navbar />
       
       <div className="space-y-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-white/10 pb-8 gap-6">

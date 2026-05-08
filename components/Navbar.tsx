@@ -142,6 +142,48 @@ export default function Navbar() {
                     </Link>
                   ))}
                 </div>
+
+                <div className="mt-auto p-8 border-t border-white/5 bg-black/50">
+                  {user ? (
+                    <div className="space-y-6">
+                      <div className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-primary/10 border border-primary/20">
+                        <BrainCircuit className="h-5 w-5 text-primary animate-pulse" />
+                        <span className="text-xs font-black tracking-[0.2em] text-white uppercase">
+                          {profile?.streak || 0} Day Streak
+                        </span>
+                      </div>
+                      <Link 
+                        href="/profile" 
+                        className="flex items-center space-x-4 p-2 rounded-xl hover:bg-white/5 transition-all"
+                      >
+                        <div className="h-12 w-12 rounded-lg bg-[#333] overflow-hidden ring-1 ring-white/10">
+                          {user.user_metadata?.avatar_url ? (
+                            <img src={user.user_metadata.avatar_url} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <User className="h-full w-full p-2 text-white/50" />
+                          )}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-white">My Intelligence</span>
+                          <span className="text-[10px] font-medium text-white/40 truncate w-32">{user.email}</span>
+                        </div>
+                      </Link>
+                      <button 
+                        onClick={() => supabase.auth.signOut()}
+                        className="w-full py-3 rounded-lg border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-primary transition-all"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  ) : (
+                    <Link 
+                      href="/auth/login"
+                      className="flex items-center justify-center w-full py-4 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(229,9,20,0.4)]"
+                    >
+                      Initialize Auth
+                    </Link>
+                  )}
+                </div>
               </SheetContent>
             </Sheet>
           </div>

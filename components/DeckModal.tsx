@@ -79,6 +79,9 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
   if (!deck) return null;
 
   const startSession = () => {
+    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3");
+    audio.volume = 0.2;
+    audio.play().catch(() => {}); // Ignore if blocked by browser
     setIsReviewing(true);
     setTimeout(() => {
       setShowRatings(true);
@@ -122,6 +125,9 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
     if (error) {
       toast.error("Failed to update progress");
     } else {
+      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3");
+      audio.volume = 0.3;
+      audio.play().catch(() => {});
       setProgress(nextProgress);
       toast.success("Intelligence Synchronized");
       setShowRatings(false);

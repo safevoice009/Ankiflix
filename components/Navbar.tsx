@@ -17,6 +17,7 @@ import { supabase } from "@/lib/supabase";
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,14 +28,25 @@ export default function Navbar() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) fetchProfile(session.user.id);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) fetchProfile(session.user.id);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    if (data) setProfile(data);
+  };
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -223,21 +235,30 @@ export default function Navbar() {
           </button>
           
           {user ? (
-            <Link 
-              href="/profile" 
-              className="flex items-center space-x-3 cursor-pointer group px-2 py-1 rounded-md transition hover:bg-white/5"
-            >
-              <div className="h-9 w-9 overflow-hidden rounded-md bg-[#333] transition-all group-hover:ring-2 ring-primary/50 shadow-lg">
-                {user.user_metadata?.avatar_url ? (
-                  <img src={user.user_metadata.avatar_url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <User className="h-full w-full p-1.5 text-white/70" />
-                )}
+            <div className="flex items-center space-x-6">
+              {/* Neural Streak - Gen Z Hook */}
+              <div className="hidden items-center space-x-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 md:flex group hover:bg-primary/20 transition-all cursor-default">
+                <span className="text-primary animate-pulse">
+                   <BrainCircuit className="h-4 w-4" />
+                </span>
+                <span className="text-[10px] font-black tracking-widest text-white">
+                  {profile?.streak || 0} STREAK
+                </span>
               </div>
-              <div className="hidden border-l border-white/10 pl-3 text-[10px] font-black md:block tracking-[0.2em] text-white/40 uppercase">
-                {user.email?.split('@')[0]}
-              </div>
-            </Link>
+
+              <Link 
+                href="/profile" 
+                className="flex items-center space-x-3 cursor-pointer group px-2 py-1 rounded-md transition hover:bg-white/5"
+              >
+                <div className="h-9 w-9 overflow-hidden rounded-md bg-[#333] transition-all group-hover:ring-2 ring-primary/50 shadow-lg">
+                  {user.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <User className="h-full w-full p-1.5 text-white/70" />
+                  )}
+                </div>
+              </Link>
+            </div>
           ) : (
             <Link 
               href="/auth/login"

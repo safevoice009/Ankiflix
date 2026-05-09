@@ -28,8 +28,10 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q");
   const [results, setResults] = useState<Deck[]>([]);
+  const [externalResults, setExternalResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
+  const [isSearchingExternal, setIsSearchingExternal] = useState(false);
+  const [selectedDeck, setSelectedDeck] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState("ranking");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
@@ -69,6 +71,17 @@ function SearchContent() {
       const { data, error } = await deckQuery;
       if (!error) setResults(data || []);
       setLoading(false);
+
+      // Deep Scan - Real-time AnkiWeb Search
+      setIsSearchingExternal(true);
+      try {
+        const res = await fetch(`/api/search-proxy?q=${encodeURIComponent(query)}`);
+        const { results: extResults } = await res.json();
+        setExternalResults(extResults || []);
+      } catch (err) {
+        console.error("External scan failed:", err);
+      }
+      setIsSearchingExternal(false);
     }
     fetchResults();
   }, [query, sortBy, filterCategory]);
@@ -157,7 +170,7 @@ function SearchContent() {
               );
             })}
           </div>
-        ) : query ? (
+        ) : !isSearchingExternal && query && results.length === 0 && externalResults.length === 0 ? (
           <div className="py-40 text-center space-y-8">
             <div className="inline-block p-12 rounded-3xl bg-[#181818] border border-white/5 shadow-2xl">
               <p className="text-white/20 font-black uppercase tracking-[0.3em] text-sm">No Intel Found</p>
@@ -171,6 +184,46 @@ function SearchContent() {
             </div>
           </div>
         ) : null}
+
+        {/* Global Vault Scan Results - Gen Z / Efficiency Upgrade */}
+        {(isSearchingExternal || externalResults.length > 0) && (
+          <div className="space-y-12 pt-20 border-t border-white/5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full bg-primary animate-ping" />
+                  <span className="text-primary font-black uppercase tracking-[0.4em] text-[10px]">Neural Proxy Scan</span>
+                </div>
+                <h2 className="font-heading text-3xl font-black uppercase text-white italic">Global <span className="text-primary not-italic">Vault</span> Assets</h2>
+              </div>
+              {isSearchingExternal && (
+                <div className="flex items-center space-x-3 text-white/40">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Scanning AnkiWeb...</span>
+                </div>
+              )}
+            </div>
+
+            {externalResults.length > 0 ? (
+              <div className="grid grid-cols-2 gap-x-6 gap-y-16 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 animate-in slide-in-from-bottom-8 duration-1000">
+                {externalResults.map((deck: any) => (
+                  <DeckCard 
+                    key={deck.id} 
+                    deck={deck} 
+                    onClick={(d) => {
+                      setSelectedDeck(d);
+                      setIsModalOpen(true);
+                    }} 
+                  />
+                ))}
+              </div>
+            ) : !isSearchingExternal && (
+              <div className="py-20 text-center rounded-3xl bg-white/[0.02] border border-dashed border-white/10">
+                <p className="text-white/20 font-black uppercase tracking-widest text-[10px]">Global Scan yielded no additional intelligence</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <DeckModal 

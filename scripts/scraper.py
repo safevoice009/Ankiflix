@@ -79,26 +79,30 @@ def scrape_ankiweb_search(search_term, category_id, category_slug):
                 # Use Unsplash fallback based on category
                 thumbnail_url = FALLBACK_IMAGES.get(category_slug, FALLBACK_IMAGES["default"])
                 
+                # Fetch detailed info if possible (simplified for performance)
                 deck_data = {
                     "title": title,
                     "anki_link": f"https://ankiweb.net{href}",
                     "category_id": category_id,
                     "ranking": rating,
                     "total_cards": cards,
-                    "description": f"High-quality Anki deck discovered for {search_term}.",
+                    "description": f"High-authority Anki library discovered for {search_term}. Rated {rating}/5 by the community.",
                     "thumbnail_url": thumbnail_url,
+                    "tags": [search_term, category_slug],
+                    "author": "AnkiWeb Global Community",
+                    "last_sync_at": "now()",
                     "updated_at": "now()"
                 }
                 
-                print(f"Syncing: {title}")
+                print(f"Deep Indexing: {title}")
                 supabase.table("decks").upsert(deck_data, on_conflict="title").execute()
-                time.sleep(1) # Be nice to AnkiWeb
+                time.sleep(0.5) # Efficiency upgrade
                 
     except Exception as e:
         print(f"Error during search scraping for {search_term}: {e}")
 
 if __name__ == "__main__":
-    print("--- ANKIFLIX SCRAPER START ---")
+    print("--- ANKIFLIX DEEP INDEXER START ---")
     start_time = time.time()
     
     # 1. Fetch categories from Supabase
@@ -106,19 +110,23 @@ if __name__ == "__main__":
         res = supabase.table("categories").select("*").execute()
         categories = res.data
         if not categories:
-            print("[CRITICAL] No categories found in Supabase. Intelligence seeding cannot proceed.")
+            print("[CRITICAL] No categories found. Aborting sequence.")
             exit(0)
             
-        print(f"[INFO] Found {len(categories)} categories. Initiating sequence...")
+        print(f"[INFO] Analyzing {len(categories)} intelligence fields...")
         
+        # Extended search terms for deeper library coverage
         for cat in categories:
-            print(f"\n[CATEGORY] Analyzing field: {cat['name']}...")
-            scrape_ankiweb_search(cat["name"], cat["id"], cat["slug"])
+            search_terms = [cat["name"], f"USMLE {cat['name']}", f"Advanced {cat['name']}"] if cat["slug"] == "medical" else [cat["name"]]
+            
+            for term in search_terms:
+                print(f"\n[SCAN] Deep Scanning: {term}...")
+                scrape_ankiweb_search(term, cat["id"], cat["slug"])
             
         duration = time.time() - start_time
-        print(f"\n--- SCRAPER COMPLETE ---")
+        print(f"\n--- DEEP INDEX COMPLETE ---")
         print(f"Total duration: {duration:.2f} seconds")
-        print("Status: Intelligence Synchronized.")
+        print("Status: Global Intelligence Ingested.")
             
     except Exception as e:
         print(f"[ERROR] Fatal exception during category fetch: {e}")

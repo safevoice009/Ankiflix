@@ -33,6 +33,8 @@ const FALLBACK_IMAGES: Record<string, string> = {
   Default: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400",
 };
 
+import Link from "next/link";
+
 export default function DeckCard({ deck, onClick }: DeckCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -43,34 +45,35 @@ export default function DeckCard({ deck, onClick }: DeckCardProps) {
       className="relative h-28 min-w-[200px] cursor-pointer md:h-36 md:min-w-[260px]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={() => onClick(deck)}
     >
-      <AspectRatio ratio={16 / 9} className="overflow-hidden rounded-md group">
-        <div 
-          className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-          style={{ backgroundImage: `url(${thumbnailUrl})` }}
-        />
-        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
-        
-        {/* Badges on main card */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1 opacity-100 transition-opacity">
-          {deck.total_cards && (
-            <Badge variant="secondary" className="bg-black/60 text-[10px] backdrop-blur-md border-none text-white px-1 py-0 h-4">
-              {deck.total_cards} Cards
-            </Badge>
-          )}
-        </div>
-
-        {/* Netflix-style Progress Bar */}
-        {deck.mastery !== undefined && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-            <div 
-              className="h-full bg-primary transition-all duration-1000" 
-              style={{ width: `${deck.mastery}%` }} 
-            />
+      <div className="h-full w-full" onClick={() => onClick(deck)}>
+        <AspectRatio ratio={16 / 9} className="overflow-hidden rounded-md group">
+          <div 
+            className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+            style={{ backgroundImage: `url(${thumbnailUrl})` }}
+          />
+          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
+          
+          {/* Badges on main card */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1 opacity-100 transition-opacity">
+            {deck.total_cards && (
+              <Badge variant="secondary" className="bg-black/60 text-[10px] backdrop-blur-md border-none text-white px-1 py-0 h-4">
+                {deck.total_cards} Cards
+              </Badge>
+            )}
           </div>
-        )}
-      </AspectRatio>
+
+          {/* Netflix-style Progress Bar */}
+          {deck.mastery !== undefined && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+              <div 
+                className="h-full bg-primary transition-all duration-1000" 
+                style={{ width: `${deck.mastery}%` }} 
+              />
+            </div>
+          )}
+        </AspectRatio>
+      </div>
 
       <AnimatePresence>
         {isHovered && (
@@ -81,52 +84,63 @@ export default function DeckCard({ deck, onClick }: DeckCardProps) {
             transition={{ type: "spring", stiffness: 350, damping: 30 }}
             className="absolute inset-x-[-15%] top-[-10%] z-50 h-auto min-w-[320px] rounded-xl bg-[#181818] shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(229,9,20,0.15)] overflow-hidden border border-white/20"
           >
-            <AspectRatio ratio={16 / 9}>
-              <div 
-                className="h-full w-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${thumbnailUrl})` }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent" />
-              <div className="absolute top-2 left-2 flex flex-col gap-1">
-                <Badge className="bg-primary text-[8px] font-black uppercase tracking-tighter h-4 px-1 rounded-sm border-none">Most Popular</Badge>
-              </div>
-            </AspectRatio>
+            <Link href={`/decks/${deck.id}`}>
+              <AspectRatio ratio={16 / 9}>
+                <div 
+                  className="h-full w-full bg-cover bg-center"
+                  style={{ backgroundImage: `url(${thumbnailUrl})` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent" />
+                <div className="absolute top-2 left-2 flex flex-col gap-1">
+                  <Badge className="bg-primary text-[8px] font-black uppercase tracking-tighter h-4 px-1 rounded-sm border-none">Intelligence Asset</Badge>
+                </div>
+              </AspectRatio>
+            </Link>
 
             <div className="p-5 space-y-4">
               <div className="flex items-center space-x-2">
-                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90 shadow-lg">
+                <Link 
+                  href={`/decks/${deck.id}`}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90 shadow-lg"
+                >
                   <Play className="h-5 w-5 fill-black" />
-                </button>
+                </Link>
                 <button className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5">
                   <Plus className="h-5 w-5" />
                 </button>
                 <button className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5">
                   <ThumbsUp className="h-5 w-5" />
                 </button>
-                <button className="ml-auto flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5">
+                <button 
+                  onClick={() => onClick(deck)}
+                  className="ml-auto flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5"
+                >
                   <ChevronDown className="h-5 w-5" />
                 </button>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center space-x-3 text-xs font-black">
-                  <span className="text-green-500">{deck.ranking ? Math.round(deck.ranking * 20) : 98}% Match</span>
-                  <span className="text-white border border-white/30 px-1.5 text-[9px] rounded-sm bg-white/5">4K Ultra HD</span>
+                  <span className="text-green-500">{deck.ranking ? Math.round(deck.ranking * 20) : 98}% Sync Rate</span>
+                  <span className="text-white border border-white/30 px-1.5 text-[9px] rounded-sm bg-white/5 uppercase">High Authority</span>
                   <span className="text-white/60">{deck.total_cards ? `${deck.total_cards} Cards` : 'Premium Content'}</span>
                 </div>
                 
                 <h3 className="text-lg font-black text-white leading-tight font-heading tracking-tight">{deck.title}</h3>
                 
-                <p className="text-[10px] text-white/50 leading-relaxed line-clamp-3 font-medium">
-                  {deck.description || "This premium Anki deck has been scientifically designed to optimize your long-term retention and exam performance. Features high-quality images and clear explanations."}
+                <p className="text-[10px] text-white/50 leading-relaxed line-clamp-3 font-medium italic">
+                  {deck.description || "This premium intelligence asset has been verified and indexed for high-retention performance."}
                 </p>
                 
-                <div className="flex flex-wrap gap-2 pt-1">
-                   <span className="text-[9px] font-bold text-white/80">Intense</span>
-                   <span className="text-white/20">•</span>
-                   <span className="text-[9px] font-bold text-white/80">Highly Recommended</span>
-                   <span className="text-white/20">•</span>
-                   <span className="text-[9px] font-bold text-white/80">Top 1%</span>
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-[9px] font-bold text-primary italic uppercase tracking-widest underline decoration-2 underline-offset-4">Premium</span>
+                    <span className="text-white/20">•</span>
+                    <span className="text-[9px] font-bold text-white/80 uppercase tracking-widest">Global Vault</span>
+                  </div>
+                  <Link href={`/decks/${deck.id}`} className="text-[9px] font-black uppercase text-white/40 hover:text-white transition-colors tracking-widest">
+                    Details →
+                  </Link>
                 </div>
               </div>
             </div>

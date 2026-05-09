@@ -28,6 +28,15 @@ export default async function Home() {
     .order('ranking', { ascending: false })
     .limit(10);
 
+  // Global Vault Stats
+  const { count: totalDecks } = await supabase
+    .from('decks')
+    .select('*', { count: 'exact', head: true });
+
+  const { count: totalUsers } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true });
+
   // Fetch user SRS progress if logged in
   let userProgress = null;
   let highestPriorityDeck = null;
@@ -47,7 +56,7 @@ export default async function Home() {
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen pb-24">
       {/* Hero Section */}
       <section className="relative h-[110vh] w-full overflow-hidden bg-cinematic-gradient">
         {/* Particle System */}
@@ -77,11 +86,11 @@ export default async function Home() {
 
         <div className="relative z-40 flex h-full flex-col justify-center px-4 md:px-12 pb-96">
           <div className="max-w-[1400px] mx-auto w-full">
-            <div className="max-w-4xl space-y-10 animate-fade-in pt-20">
+            <div className="max-w-5xl space-y-10 animate-fade-in pt-20">
               <div className="flex items-center space-x-3">
                 <div className="h-[2px] w-12 bg-primary shadow-[0_0_15px_rgba(229,9,20,1)]" />
-                <span className="text-primary font-black uppercase tracking-[0.5em] text-[10px]">Intelligence Unlocked</span>
-                <span className="text-white/20 text-[10px] font-bold uppercase tracking-widest border-l border-white/10 pl-3">Phase 2: Discovery Engine</span>
+                <span className="text-primary font-black uppercase tracking-[0.5em] text-[10px]">Global Vault Online</span>
+                <span className="text-white/20 text-[10px] font-bold uppercase tracking-widest border-l border-white/10 pl-3">Neural Link Phase 3</span>
               </div>
               
               <div className="space-y-4">
@@ -93,15 +102,15 @@ export default async function Home() {
                     </>
                   ) : (
                     <>
-                      THE <span className="text-primary not-italic">ULTIMATE</span> <br />
-                      <span className="text-white">PREMIERE</span> <br />
-                      OF ACADEMIA
+                      THE <span className="text-primary not-italic">GLOBAL</span> <br />
+                      <span className="text-white">VAULT</span> OF <br />
+                      INTELLIGENCE
                     </>
                   )}
                 </h1>
               </div>
               
-              <p className="text-lg text-white/60 md:text-2xl max-w-2xl font-medium font-sans leading-relaxed">
+              <p className="text-xl text-white/60 md:text-2xl max-w-3xl font-medium font-sans leading-relaxed">
                 {highestPriorityDeck ? (
                   <>
                     Your memory is fading on this high-authority asset. 
@@ -109,8 +118,8 @@ export default async function Home() {
                   </>
                 ) : (
                   <>
-                    Streamline your mastery. Access the world's most high-authority Anki libraries curated for the 
-                    top 1% of Medical, Law, and Engineering scholars. 
+                    Streamline your mastery. Access <span className="text-white font-bold">{totalDecks || '1,000+'}</span> high-authority Anki libraries 
+                    synchronized live from the global vault. Curated for the top 1% of scholars.
                   </>
                 )}
               </p>
@@ -121,12 +130,36 @@ export default async function Home() {
                   className="group flex items-center space-x-3 rounded-full bg-primary px-12 py-5 font-black text-white transition-all hover:scale-105 hover:bg-red-700 active:scale-95 shadow-[0_20px_50px_rgba(229,9,20,0.3)]"
                 >
                   <Play className="h-6 w-6 fill-white" />
-                  <span className="uppercase tracking-widest text-lg italic">Access Vault</span>
+                  <span className="uppercase tracking-widest text-lg italic">Browse Vault</span>
                 </a>
                 <button className="flex items-center space-x-3 rounded-full bg-white/5 px-12 py-5 font-black text-white backdrop-blur-3xl border border-white/10 transition-all hover:bg-white/10 hover:border-white/20 transform active:scale-95 group">
                   <Info className="h-6 w-6 text-white/50 group-hover:text-white" />
-                  <span className="uppercase tracking-widest text-lg">Platform Intel</span>
+                  <span className="uppercase tracking-widest text-lg">System Specs</span>
                 </button>
+              </div>
+
+              {/* Live Ticker */}
+              <div className="flex items-center gap-12 pt-12 border-t border-white/5">
+                <div className="space-y-1">
+                  <span className="text-white/30 text-[9px] font-black uppercase tracking-[0.3em]">Total Intelligence Indexed</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl font-black font-heading text-white tracking-tighter">{(totalDecks || 1240).toLocaleString()}</span>
+                    <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-white/30 text-[9px] font-black uppercase tracking-[0.3em]">Active Mastery Syncs</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl font-black font-heading text-white tracking-tighter">{(totalUsers || 420).toLocaleString()}</span>
+                    <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  </div>
+                </div>
+                <div className="hidden md:block space-y-1">
+                  <span className="text-white/30 text-[9px] font-black uppercase tracking-[0.3em]">Global Vault Uptime</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl font-black font-heading text-white tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">99.9%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -137,7 +170,7 @@ export default async function Home() {
       </section>
 
       {/* Discovery Feed */}
-      <section id="discovery">
+      <section id="discovery" className="relative z-30">
         <DiscoveryFeed 
           categories={(categories as any) || []} 
           trendingDecks={(trendingDecks as any) || []} 

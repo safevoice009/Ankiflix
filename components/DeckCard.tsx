@@ -79,10 +79,10 @@ export default function DeckCard({ deck, onClick }: DeckCardProps) {
         {isHovered && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 0 }}
-            animate={{ opacity: 1, scale: 1.2, y: -40 }}
+            animate={{ opacity: 1, scale: 1.1, y: -20 }}
             exit={{ opacity: 0, scale: 0.9, y: 0 }}
             transition={{ type: "spring", stiffness: 350, damping: 30 }}
-            className="absolute inset-x-[-15%] top-[-10%] z-50 h-auto min-w-[320px] rounded-xl bg-[#181818] shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(229,9,20,0.15)] overflow-hidden border border-white/20"
+            className="absolute left-1/2 -translate-x-1/2 top-[-10%] z-50 h-auto w-[320px] rounded-xl bg-[#181818] shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(229,9,20,0.15)] overflow-hidden border border-white/20 pointer-events-auto"
           >
             <Link href={`/decks/${deck.id}`}>
               <AspectRatio ratio={16 / 9}>

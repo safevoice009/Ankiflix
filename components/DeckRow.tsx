@@ -70,23 +70,26 @@ export default function DeckRow({ title, decks, onDeckClick, isSpecial }: DeckRo
 
         <div
           ref={rowRef}
-          className="flex items-center space-x-2 overflow-x-scroll no-scrollbar md:space-x-4 md:px-12 pb-8 pt-4 snap-x snap-proximity"
+          className="flex items-center space-x-4 overflow-x-scroll no-scrollbar pb-8 pt-4 snap-x snap-proximity"
         >
-          {decks.length > 0 ? (
-            decks.map((deck) => (
-              <div key={deck.id} className="snap-start">
-                <DeckCard 
-                  deck={deck} 
-                  onClick={onDeckClick} 
-                />
+          {/* Inner padding wrapper to align first/last items with title */}
+          <div className="flex items-center space-x-4 px-4 md:px-12">
+            {decks.length > 0 ? (
+              decks.map((deck) => (
+                <div key={deck.id} className="snap-start">
+                  <DeckCard 
+                    deck={deck} 
+                    onClick={onDeckClick} 
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center h-48 w-[80vw] md:w-[60vw] border border-white/5 bg-white/[0.02] rounded-2xl animate-pulse space-y-4">
+                 <Sparkles className="h-8 w-8 text-white/10" />
+                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Vault Syncing...</span>
               </div>
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center h-48 w-full border border-white/5 bg-white/[0.02] rounded-2xl animate-pulse space-y-4">
-               <Sparkles className="h-8 w-8 text-white/10" />
-               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Vault Syncing...</span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Right Scroll Trigger */}

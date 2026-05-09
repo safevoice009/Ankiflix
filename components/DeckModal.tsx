@@ -157,7 +157,7 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl overflow-hidden rounded-xl bg-[#141414] p-0 text-white border border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)]">
+      <DialogContent className="max-w-4xl w-[95vw] md:w-full overflow-hidden rounded-xl bg-[#141414] p-0 text-white border border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] z-[200]">
         <div className="relative h-[450px] w-full">
           {deck.thumbnail_url ? (
             <Image 

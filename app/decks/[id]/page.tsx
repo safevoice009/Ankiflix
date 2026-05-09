@@ -221,4 +221,3 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     </div>
   );
 }
-}

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -24,8 +25,9 @@ export async function GET(request: Request) {
     const html = await response.text();
     const $ = cheerio.load(html);
     const results: any[] = [];
+    const dbUpserts: any[] = [];
 
-    $('table tr').slice(1, 13).each((_, element) => {
+    $('table tr').slice(1, 15).each((_, element) => {
       const cols = $(element).find('td');
       if (cols.length >= 3) {
         const linkTag = cols.eq(0).find('a');
@@ -35,18 +37,29 @@ export async function GET(request: Request) {
         const total_cards = parseInt(cols.eq(2).text().trim().replace(',', '')) || 0;
 
         if (title && href) {
-          results.push({
-            id: `ankiweb-${href.split('/').pop()}`,
+          const deckId = `ext-${href.split('/').pop()}`;
+          const deckData = {
+            id: deckId,
             title,
             anki_link: `https://ankiweb.net${href}`,
             ranking,
             total_cards,
-            description: `Global asset identified in the shared vault for: ${query}.`,
-            is_external: true
-          });
+            description: `Intelligence discovery for ${query}. This asset has been indexed live from the global AnkiWeb vault.`,
+            tags: [query, 'global-vault'],
+            author: 'AnkiWeb Contributor',
+            last_sync_at: new Date().toISOString(),
+          };
+
+          results.push({ ...deckData, is_external: true });
+          dbUpserts.push(deckData);
         }
       }
     });
+
+    // Organic Intelligence Ingestion: Persist results to DB for future local discovery
+    if (dbUpserts.length > 0) {
+      await supabase.from('decks').upsert(dbUpserts, { onConflict: 'title' });
+    }
 
     return NextResponse.json({ results });
   } catch (error) {

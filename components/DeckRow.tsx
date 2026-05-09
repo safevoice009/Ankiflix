@@ -73,7 +73,7 @@ export default function DeckRow({ title, decks, onDeckClick, isSpecial }: DeckRo
         <div className="max-w-[1400px] mx-auto w-full">
           <div
             ref={rowRef}
-            className="flex items-center space-x-4 overflow-x-scroll no-scrollbar pb-8 pt-4 snap-x snap-proximity"
+            className="flex items-center space-x-4 overflow-x-scroll no-scrollbar pb-24 pt-12 -my-12 snap-x snap-proximity"
           >
             {/* Inner padding wrapper to align first/last items with title */}
             <div className="flex items-center space-x-4 px-4 md:px-12">

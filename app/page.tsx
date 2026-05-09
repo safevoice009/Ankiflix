@@ -86,7 +86,7 @@ export default async function Home() {
 
         <div className="relative z-40 flex h-full flex-col justify-center px-4 md:px-12 pb-96">
           <div className="max-w-[1400px] mx-auto w-full">
-            <div className="max-w-5xl space-y-10 animate-fade-in pt-20">
+            <div className="max-w-5xl space-y-10 animate-fade-in pt-32 md:pt-40">
               <div className="flex items-center space-x-3">
                 <div className="h-[2px] w-12 bg-primary shadow-[0_0_15px_rgba(229,9,20,1)]" />
                 <span className="text-primary font-black uppercase tracking-[0.5em] text-[10px]">Global Vault Online</span>

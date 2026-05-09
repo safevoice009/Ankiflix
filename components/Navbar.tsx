@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Bell, User, Menu, ChevronDown, BrainCircuit } from "lucide-react";
+import { Search, Bell, User, Menu, ChevronDown, BrainCircuit, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -52,17 +52,34 @@ export default function Navbar() {
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery.length > 2) {
         setIsSearching(true);
-        const { data } = await supabase
+        // 1. Local Scan
+        const { data: localData } = await supabase
           .from("decks")
           .select("id, title, thumbnail_url, categories!inner(name)")
           .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,categories.name.ilike.%${searchQuery}%`)
-          .limit(5);
-        setSearchResults(data || []);
+          .limit(3);
+        
+        // 2. Global Vault Scan (Organic Ingestion)
+        let globalData = [];
+        try {
+          const res = await fetch(`/api/search-proxy?q=${encodeURIComponent(searchQuery)}`);
+          const { results } = await res.json();
+          globalData = results?.slice(0, 3) || [];
+        } catch (err) {
+          console.error("Global scan failed", err);
+        }
+
+        const combined = [
+          ...(localData || []).map((d: any) => ({ ...d, source: 'local' })),
+          ...globalData.map((d: any) => ({ ...d, source: 'global' }))
+        ].filter((v, i, a) => a.findIndex(t => t.title === v.title) === i);
+
+        setSearchResults(combined);
         setIsSearching(false);
       } else {
         setSearchResults([]);
       }
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
@@ -97,7 +114,7 @@ export default function Navbar() {
         "fixed top-0 z-[100] w-full px-4 py-4 transition-all duration-700 md:px-12",
         isScrolled 
           ? "bg-[#141414]/95 backdrop-blur-xl py-3 shadow-[0_10px_30px_rgba(0,0,0,0.5)] border-b border-white/5" 
-          : "bg-transparent bg-gradient-to-b from-black/80 via-black/20 to-transparent"
+          : "bg-gradient-to-b from-black/90 via-black/40 to-transparent"
       )}
     >
       <div className="max-w-[1400px] mx-auto flex items-center justify-between">
@@ -250,9 +267,17 @@ export default function Navbar() {
                               </div>
                             )}
                           </div>
-                          <span className="text-sm font-bold text-white/70 group-hover:text-white transition truncate font-sans">
-                            {deck.title}
-                          </span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-bold text-white/70 group-hover:text-white transition truncate font-sans">
+                              {deck.title}
+                            </span>
+                            {deck.source === 'global' && (
+                              <span className="text-[8px] font-black uppercase text-primary tracking-widest flex items-center gap-1">
+                                <Sparkles className="h-2 w-2" />
+                                Global Vault Discovery
+                              </span>
+                            )}
+                          </div>
                         </Link>
                       ))}
                       <div className="border-t border-white/5 mt-2 px-6 py-3 bg-white/5">
@@ -290,7 +315,7 @@ export default function Navbar() {
 
               <Link 
                 href="/profile" 
-                className="flex items-center space-x-3 cursor-pointer group px-2 py-1 rounded-md transition hover:bg-white/5"
+                className="group relative"
               >
                 <div className="h-9 w-9 overflow-hidden rounded-md bg-[#333] transition-all group-hover:ring-2 ring-primary/50 shadow-lg">
                   {user.user_metadata?.avatar_url ? (

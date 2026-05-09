@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Navbar } from "@/components/Navbar";
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { BrainCircuit, Link as LinkIcon, Send, Sparkles, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";

@@ -75,7 +75,7 @@ export default function DiscoveryFeed({ categories, trendingDecks, userProgress 
     }));
 
   return (
-    <div className="relative -mt-24 space-y-24 pb-20 z-30">
+    <div className="relative -mt-24 space-y-24 pb-20 z-30 w-full overflow-x-hidden">
       {/* SRS Powered Rows */}
       {dueDecks.length > 0 && (
         <DeckRow 

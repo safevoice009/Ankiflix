@@ -100,7 +100,7 @@ export default function Navbar() {
           : "bg-transparent bg-gradient-to-b from-black/80 via-black/20 to-transparent"
       )}
     >
-      <div className="flex items-center justify-between">
+      <div className="max-w-[1400px] mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-4 md:space-x-12">
           <Link href="/" className="group relative">
             <span className="font-heading text-3xl font-black text-primary tracking-tight md:text-4xl transition-all duration-300 group-hover:drop-shadow-[0_0_15px_rgba(229,9,20,0.8)]">

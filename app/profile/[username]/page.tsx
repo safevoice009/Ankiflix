@@ -7,12 +7,17 @@ import Navbar from "@/components/Navbar";
 import IdentityCard from "@/components/IdentityCard";
 import { Loader2, BrainCircuit, ShieldAlert } from "lucide-react";
 import DeckCard from "@/components/DeckCard";
+import DeckModal from "@/components/DeckModal";
+
 
 export default function PublicProfilePage() {
   const { username } = useParams();
   const [profile, setProfile] = useState<any>(null);
   const [decks, setDecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDeck, setSelectedDeck] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   useEffect(() => {
     fetchProfile();
@@ -52,6 +57,12 @@ export default function PublicProfilePage() {
 
     setIsLoading(false);
   };
+
+  const handleDeckClick = (deck: any) => {
+    setSelectedDeck(deck);
+    setIsModalOpen(true);
+  };
+
 
   if (isLoading) {
     return (
@@ -113,8 +124,9 @@ export default function PublicProfilePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {decks.map(deck => (
-                <DeckCard key={deck.id} deck={deck} />
+                <DeckCard key={deck.id} deck={deck} onClick={handleDeckClick} />
               ))}
+
               
               {decks.length === 0 && (
                 <div className="col-span-full py-20 bg-white/5 rounded-3xl border border-dashed border-white/10 flex flex-col items-center justify-center text-center space-y-4">
@@ -125,6 +137,13 @@ export default function PublicProfilePage() {
           </div>
         </div>
       </div>
+
+      <DeckModal 
+        deck={selectedDeck} 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </main>
   );
 }
+

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Bell, User, Menu, ChevronDown } from "lucide-react";
+import { Search, Bell, User, Menu, ChevronDown, BrainCircuit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";

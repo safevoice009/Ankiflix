@@ -36,7 +36,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${bebas.variable} ${outfit.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full bg-background text-foreground font-sans selection:bg-primary selection:text-white flex flex-col">
+      <body className="min-h-full bg-background text-foreground font-sans selection:bg-primary selection:text-white flex flex-col overflow-x-hidden">
         <Toaster position="bottom-right" toastOptions={{ style: { background: '#333', color: '#fff' } }} />
         <Navbar />
         <main className="flex-grow">

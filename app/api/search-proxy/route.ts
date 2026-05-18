@@ -84,14 +84,69 @@ export async function GET(request: Request) {
     // Organic Intelligence Ingestion: Persist results to DB for future local discovery
     if (dbUpserts.length > 0) {
       const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      if (serviceRoleKey) {
-        const adminClient = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          serviceRoleKey
-        );
-        await adminClient.from('decks').upsert(dbUpserts, { onConflict: 'title' });
-      } else {
-        await supabase.from('decks').upsert(dbUpserts, { onConflict: 'title' });
+      const client = serviceRoleKey
+        ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey)
+        : supabase;
+
+      for (const deck of dbUpserts) {
+        try {
+          let existingId: string | null = null;
+          if (deck.anki_id) {
+            const { data: existingById } = await client
+              .from('decks')
+              .select('id')
+              .eq('anki_id', deck.anki_id)
+              .maybeSingle();
+            if (existingById) {
+              existingId = existingById.id;
+            }
+          }
+
+          const updateData = {
+            title: deck.title,
+            anki_link: deck.anki_link,
+            download_url: deck.download_url,
+            ranking: deck.ranking,
+            total_cards: deck.total_cards,
+            description: deck.description,
+            tags: deck.tags,
+            author: deck.author,
+            last_sync_at: new Date().toISOString()
+          };
+
+          if (existingId) {
+            // Update by id
+            await client.from('decks').update(updateData).eq('id', existingId);
+          } else {
+            // Fallback check by title
+            const { data: existingByTitle } = await client
+              .from('decks')
+              .select('id')
+              .eq('title', deck.title)
+              .maybeSingle();
+
+            if (existingByTitle) {
+              // Update by title (linking the newly found anki_id)
+              await client
+                .from('decks')
+                .update({
+                  anki_id: deck.anki_id,
+                  ...updateData
+                })
+                .eq('id', existingByTitle.id);
+            } else {
+              // Insert new discovery
+              const deckInsertData = { ...deck };
+              delete (deckInsertData as Record<string, unknown>).id;
+              await client.from('decks').insert({
+                ...deckInsertData,
+                last_sync_at: new Date().toISOString()
+              });
+            }
+          }
+        } catch (err) {
+          console.error(`Error processing deck ingestion in proxy: ${deck.title}`, err);
+        }
       }
     }
 

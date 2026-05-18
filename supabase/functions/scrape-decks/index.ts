@@ -31,9 +31,22 @@ serve(async (req) => {
       const cards = parseInt($(el).find("td").eq(2).text().replace(/,/g, "")) || 0
 
       if (title && href) {
+        const hrefParts = href.trim().replace(/^\/|\/$/g, '').split('/')
+        const ankiId = hrefParts.length > 0 ? hrefParts[hrefParts.length - 1] : null
+        const isDigit = ankiId && /^\d+$/.test(ankiId)
+
+        const canonicalLink = isDigit
+          ? `https://ankiweb.net/shared/info/${ankiId}`
+          : `https://ankiweb.net${href}`
+        const downloadLink = isDigit
+          ? `https://ankiweb.net/shared/download/${ankiId}`
+          : canonicalLink
+
         decks.push({
+          anki_id: ankiId,
           title,
-          anki_link: `https://ankiweb.net${href}`,
+          anki_link: canonicalLink,
+          download_url: downloadLink,
           category_id,
           ranking: rating,
           total_cards: cards,
@@ -49,17 +62,93 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     )
 
-    // Upsert decks
-    const { data, error } = await supabase
-      .from("decks")
-      .upsert(decks, { onConflict: "title" })
+    // Programmatic anki_id-first then title-second deduplication
+    let count = 0
+    for (const deck of decks) {
+      try {
+        let existingId: string | null = null
+        if (deck.anki_id) {
+          const { data: existingById } = await supabase
+            .from("decks")
+            .select("id")
+            .eq("anki_id", deck.anki_id)
+            .maybeSingle()
+          if (existingById) {
+            existingId = existingById.id
+          }
+        }
 
-    if (error) throw error
+        if (existingId) {
+          // Update by id
+          await supabase
+            .from("decks")
+            .update({
+              title: deck.title,
+              anki_link: deck.anki_link,
+              download_url: deck.download_url,
+              category_id: deck.category_id,
+              ranking: deck.ranking,
+              total_cards: deck.total_cards,
+              description: deck.description,
+              thumbnail_url: deck.thumbnail_url,
+              last_sync_at: new Date().toISOString()
+            })
+            .eq("id", existingId)
+        } else {
+          // Fallback check by title
+          const { data: existingByTitle } = await supabase
+            .from("decks")
+            .select("id")
+            .eq("title", deck.title)
+            .maybeSingle()
 
-    return new Response(JSON.stringify({ message: `Successfully scraped ${decks.length} decks`, count: decks.length }), {
+          if (existingByTitle) {
+            // Update by title (linking the newly found anki_id)
+            await supabase
+              .from("decks")
+              .update({
+                anki_id: deck.anki_id,
+                anki_link: deck.anki_link,
+                download_url: deck.download_url,
+                category_id: deck.category_id,
+                ranking: deck.ranking,
+                total_cards: deck.total_cards,
+                description: deck.description,
+                thumbnail_url: deck.thumbnail_url,
+                last_sync_at: new Date().toISOString()
+              })
+              .eq("id", existingByTitle.id)
+          } else {
+            // Insert new discovery
+            await supabase
+              .from("decks")
+              .insert({
+                anki_id: deck.anki_id,
+                title: deck.title,
+                anki_link: deck.anki_link,
+                download_url: deck.download_url,
+                category_id: deck.category_id,
+                ranking: deck.ranking,
+                total_cards: deck.total_cards,
+                description: deck.description,
+                thumbnail_url: deck.thumbnail_url,
+                author: "AnkiWeb Global Community",
+                tags: [search_term],
+                last_sync_at: new Date().toISOString()
+              })
+          }
+        }
+        count++
+      } catch (err) {
+        console.error(`Error processing deck ${deck.title}:`, err)
+      }
+    }
+
+    return new Response(JSON.stringify({ message: `Successfully scraped ${decks.length} decks`, count }), {
       headers: { "Content-Type": "application/json" },
     })
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 })
   }
 })
+

@@ -24,22 +24,27 @@ interface DeckWithProgress extends Deck {
   user_deck_progress?: Array<{ ease: number }>;
 }
 
-async function applyBehaviorRanking(input: Deck[]): Promise<Deck[]> {
+async function applyBehaviorRanking(input: Deck[], query: string | null = null): Promise<Deck[]> {
   if (input.length === 0) return input;
 
   try {
     const deckIds = input.map((d) => d.id);
     const { data: events } = await supabase
       .from("deck_events")
-      .select("deck_id,event_type")
+      .select("deck_id,event_type,created_at")
       .in("deck_id", deckIds)
       .in("event_type", ["open_ankiweb", "download_ankiweb"]);
+
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const engagementByDeck = new Map<string, number>();
     for (const id of deckIds) engagementByDeck.set(id, 0);
     for (const event of events || []) {
       const current = engagementByDeck.get(event.deck_id) || 0;
-      engagementByDeck.set(event.deck_id, current + 1);
+      const eventTime = event.created_at ? new Date(event.created_at) : new Date(0);
+      const weight = eventTime >= sevenDaysAgo ? 2.0 : 1.0;
+      engagementByDeck.set(event.deck_id, current + weight);
     }
 
     const ranked = input.map((deck) => {
@@ -48,16 +53,46 @@ async function applyBehaviorRanking(input: Deck[]): Promise<Deck[]> {
       const cardsSignal = Math.min(10, Math.log10(Math.max(1, deck.total_cards ?? 0) + 1) * 4);
       const telemetrySignal = Math.log1p(engagement) * 8;
       const hasAnkiIdSignal = deck.anki_id ? 3 : 0;
-      const blendedScore = quality + cardsSignal + telemetrySignal + hasAnkiIdSignal;
+
+      // 7-Day Recency Boost
+      const deckCreatedAt = deck.created_at ? new Date(deck.created_at) : null;
+      const isNewDeck = deckCreatedAt && deckCreatedAt >= sevenDaysAgo;
+      const recencyBoost = isNewDeck ? 15 : 0;
+
+      // Search-Intent Query Match
+      let queryBoost = 0;
+      if (query) {
+        const q = query.toLowerCase().trim();
+        const titleLower = (deck.title || "").toLowerCase().trim();
+        const descLower = (deck.description || "").toLowerCase().trim();
+
+        if (titleLower === q) {
+          queryBoost = 30;
+        } else if (titleLower.startsWith(q)) {
+          queryBoost = 20;
+        } else if (titleLower.includes(q)) {
+          queryBoost = 10;
+        } else if (descLower.includes(q)) {
+          queryBoost = 5;
+        }
+      }
+
+      const blendedScore = quality + cardsSignal + telemetrySignal + hasAnkiIdSignal + recencyBoost + queryBoost;
       return { deck, blendedScore };
     });
 
     return ranked
       .sort((a, b) => b.blendedScore - a.blendedScore)
       .map((r) => r.deck);
-  } catch {
-    // Telemetry table may not exist yet in some environments.
-    return input;
+  } catch (err) {
+    console.error("Telemetry query failed, falling back to quality/card ranking:", err);
+    // Graceful fallback ranking
+    const fallbackRanked = [...input].sort((a, b) => {
+      const aQuality = (a.ranking ?? 0) * 20 + Math.min(10, Math.log10(Math.max(1, a.total_cards ?? 0) + 1) * 4) + (a.anki_id ? 3 : 0);
+      const bQuality = (b.ranking ?? 0) * 20 + Math.min(10, Math.log10(Math.max(1, b.total_cards ?? 0) + 1) * 4) + (b.anki_id ? 3 : 0);
+      return bQuality - aQuality;
+    });
+    return fallbackRanked;
   }
 }
 
@@ -87,11 +122,68 @@ function SearchContent() {
       if (!query) return;
       setLoading(true);
 
-      // Search in decks title and description
-      let deckQuery = supabase.from("decks").select("*, categories!inner(*), user_deck_progress(*)");
-      
-      // Use logical OR for broad search
-      deckQuery = deckQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
+      const cleanQuery = query.toLowerCase().trim();
+
+      // --- 1) Hot Query Cache Check ---
+      try {
+        const cacheKey = `${cleanQuery}:${filterCategory || "all"}:${sortBy}`;
+        const { data: cached } = await supabase
+          .from("search_cache")
+          .select("results, expires_at")
+          .eq("query", cacheKey)
+          .maybeSingle();
+
+        if (cached && new Date(cached.expires_at) > new Date()) {
+          setResults(cached.results.local || []);
+          setExternalResults(cached.results.external || []);
+          setLoading(false);
+          setIsSearchingExternal(false);
+          return;
+        }
+      } catch (cacheErr) {
+        console.error("Cache read failed:", cacheErr);
+      }
+
+      // --- 2) Query Expansion with Synonyms ---
+      let synonymsList: string[] = [cleanQuery];
+      const queryWords = cleanQuery.split(/\s+/).filter(Boolean);
+      if (queryWords.length > 0) {
+        try {
+          const { data: synData } = await supabase
+            .from("search_synonyms")
+            .select("term, synonyms")
+            .in("term", queryWords);
+
+          if (synData) {
+            for (const s of synData) {
+              synonymsList.push(s.term);
+              if (s.synonyms && Array.isArray(s.synonyms)) {
+                synonymsList.push(...s.synonyms);
+              }
+            }
+          }
+        } catch (synErr) {
+          console.error("Synonyms expansion query failed:", synErr);
+        }
+      }
+      synonymsList = Array.from(new Set(synonymsList));
+
+      // Construct dynamic OR clause for synonyms
+      const orConditions = synonymsList
+        .flatMap((syn) => [
+          `title.ilike.%${syn}%`,
+          `description.ilike.%${syn}%`,
+        ])
+        .join(",");
+
+      // Search in local decks
+      let deckQuery = supabase
+        .from("decks")
+        .select("*, categories!inner(*), user_deck_progress(*)");
+
+      if (orConditions) {
+        deckQuery = deckQuery.or(orConditions);
+      }
 
       if (filterCategory) {
         deckQuery = deckQuery.eq("category_id", filterCategory);
@@ -105,25 +197,29 @@ function SearchContent() {
         deckQuery = deckQuery.order("total_cards", { ascending: false });
       }
 
+      let localDecks: Deck[] = [];
+      let behaviorRanked: Deck[] = [];
       const { data, error } = await deckQuery;
-      if (!error) {
-        const raw = (data || []) as Deck[];
-        const behaviorRanked = await applyBehaviorRanking(raw);
+      if (!error && data) {
+        localDecks = data as Deck[];
+        behaviorRanked = await applyBehaviorRanking(localDecks, query);
         setResults(behaviorRanked);
+      } else {
+        console.error("Local search query failed:", error);
       }
       setLoading(false);
 
       // Deep Scan - Real-time AnkiWeb Search
       setIsSearchingExternal(true);
+      let dedupedExternal: Deck[] = [];
       try {
         const res = await fetch(`/api/search-proxy?q=${encodeURIComponent(query)}`);
         const { results: extResults } = await res.json();
-        const localDecks = (data || []) as Deck[];
         const localKeys = new Set(
           localDecks.map((d) => (d.anki_id ? `anki:${d.anki_id}` : `title:${d.title.toLowerCase()}`))
         );
 
-        const dedupedExternal = ((extResults || []) as Deck[]).filter((d) => {
+        dedupedExternal = ((extResults || []) as Deck[]).filter((d) => {
           const key = d.anki_id ? `anki:${d.anki_id}` : `title:${d.title.toLowerCase()}`;
           return !localKeys.has(key);
         });
@@ -133,6 +229,55 @@ function SearchContent() {
         console.error("External scan failed:", err);
       }
       setIsSearchingExternal(false);
+
+      // --- 3) Zero-Result Query Logging ---
+      if (localDecks.length === 0 && dedupedExternal.length === 0) {
+        try {
+          const { data: existingLog } = await supabase
+            .from("zero_result_queries")
+            .select("id, count")
+            .eq("query", cleanQuery)
+            .maybeSingle();
+
+          if (existingLog) {
+            await supabase
+              .from("zero_result_queries")
+              .update({
+                count: existingLog.count + 1,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", existingLog.id);
+          } else {
+            await supabase.from("zero_result_queries").insert({
+              query: cleanQuery,
+              count: 1,
+            });
+          }
+        } catch (logErr) {
+          console.error("Zero-result query logging failed:", logErr);
+        }
+      } else {
+        // --- 4) Save to Cache ---
+        try {
+          const cacheKey = `${cleanQuery}:${filterCategory || "all"}:${sortBy}`;
+          const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour TTL
+          const cacheData = {
+            local: behaviorRanked,
+            external: dedupedExternal,
+          };
+
+          await supabase.from("search_cache").upsert(
+            {
+              query: cacheKey,
+              results: cacheData,
+              expires_at: expiresAt,
+            },
+            { onConflict: "query" }
+          );
+        } catch (cacheErr) {
+          console.error("Caching results failed:", cacheErr);
+        }
+      }
     }
     fetchResults();
   }, [query, sortBy, filterCategory]);

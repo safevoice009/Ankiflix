@@ -12,6 +12,7 @@ export interface Deck {
   download_url?: string | null;
   category_id?: string | null;
   last_sync_at?: string | null;
+  created_at?: string | null;
   source?: "local" | "global";
   categories?: {
     id?: string;

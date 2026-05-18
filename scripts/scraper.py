@@ -85,6 +85,7 @@ def scrape_ankiweb_search(search_term, category_id, category_slug):
 
                 # Fetch detailed info if possible (simplified for performance)
                 deck_data = {
+                    "anki_id": anki_id,
                     "title": title,
                     "anki_link": canonical_link,
                     "download_url": download_link,
@@ -95,12 +96,50 @@ def scrape_ankiweb_search(search_term, category_id, category_slug):
                     "thumbnail_url": thumbnail_url,
                     "tags": [search_term, category_slug],
                     "author": "AnkiWeb Global Community",
-                    "last_sync_at": datetime.now(timezone.utc).isoformat(),
-                    "updated_at": datetime.now(timezone.utc).isoformat()
+                    "last_sync_at": datetime.now(timezone.utc).isoformat()
                 }
                 
-                print(f"Deep Indexing: {title}")
-                supabase.table("decks").upsert(deck_data, on_conflict="title").execute()
+                # Enforce anki_id-first then title-second programmatic deduplication
+                existing_by_id = None
+                if anki_id:
+                    try:
+                        res_id = supabase.table("decks").select("id").eq("anki_id", anki_id).execute()
+                        if res_id.data:
+                            existing_by_id = res_id.data[0]["id"]
+                    except Exception as err:
+                        print(f"Error querying by anki_id: {err}")
+                
+                if existing_by_id:
+                    # Update by id
+                    print(f"Syncing existing deck by ID: {title} (ID: {anki_id})")
+                    try:
+                        supabase.table("decks").update(deck_data).eq("id", existing_by_id).execute()
+                    except Exception as err:
+                        print(f"Failed to update deck by ID: {err}")
+                else:
+                    # Check fallback by title
+                    existing_by_title = None
+                    try:
+                        res_title = supabase.table("decks").select("id").eq("title", title).execute()
+                        if res_title.data:
+                            existing_by_title = res_title.data[0]["id"]
+                    except Exception as err:
+                        print(f"Error querying by title: {err}")
+
+                    if existing_by_title:
+                        print(f"Syncing existing deck by Title: {title}")
+                        try:
+                            supabase.table("decks").update(deck_data).eq("id", existing_by_title).execute()
+                        except Exception as err:
+                            print(f"Failed to update deck by Title: {err}")
+                    else:
+                        # Insert as a new record
+                        print(f"Ingesting new discovery: {title}")
+                        try:
+                            supabase.table("decks").insert(deck_data).execute()
+                        except Exception as err:
+                            print(f"Failed to insert new deck: {err}")
+                
                 time.sleep(0.5) # Efficiency upgrade
                 
     except Exception as e:
@@ -120,13 +159,30 @@ if __name__ == "__main__":
             
         print(f"[INFO] Analyzing {len(categories)} intelligence fields...")
         
-        # Extended search terms for deeper library coverage
+        # Comprehensive query expansion mapping
+        expanded_keywords = {
+            "medical": ["medical", "USMLE Step 1", "USMLE Step 2", "MCAT", "PLAB", "NCLEX", "First Aid Step 1"],
+            "anatomy": ["anatomy", "Netter Anatomy", "Gray's Anatomy", "Anatomy Flashcards"],
+            "physiology": ["physiology", "Costanzo Physiology", "Guyton Physiology"],
+            "pharmacology": ["pharmacology", "Sketchy Pharm", "Katzung Pharmacology"],
+            "pathology": ["pathology", "Pathoma", "Robbins Pathology"],
+            "microbiology": ["microbiology", "Sketchy Micro", "Clinical Microbiology"],
+            "biochemistry": ["biochemistry", "Lippincott Biochemistry", "Medical Biochemistry"],
+            "law": ["law", "Bar Exam", "MBE Law", "Constitutional Law", "Contracts Law"],
+            "languages": ["japanese", "spanish", "french", "german", "mandarin", "JLPT", "JLPT N5", "JLPT N4", "DELE Spanish"],
+            "coding": ["coding", "programming", "javascript", "python", "leetcode", "data structures", "algorithms", "web development"],
+            "history": ["history", "world history", "european history", "american history", "historical timeline"],
+            "science": ["science", "physics", "chemistry", "biology", "astronomy"],
+            "mathematics": ["mathematics", "calculus", "linear algebra", "statistics", "probability"]
+        }
+        
         for cat in categories:
-            search_terms = [cat["name"], f"USMLE {cat['name']}", f"Advanced {cat['name']}"] if cat["slug"] == "medical" else [cat["name"]]
+            slug = cat["slug"]
+            search_terms = expanded_keywords.get(slug, [cat["name"]])
             
             for term in search_terms:
                 print(f"\n[SCAN] Deep Scanning: {term}...")
-                scrape_ankiweb_search(term, cat["id"], cat["slug"])
+                scrape_ankiweb_search(term, cat["id"], slug)
             
         duration = time.time() - start_time
         print(f"\n--- DEEP INDEX COMPLETE ---")
@@ -135,3 +191,4 @@ if __name__ == "__main__":
             
     except Exception as e:
         print(f"[ERROR] Fatal exception during category fetch: {e}")
+

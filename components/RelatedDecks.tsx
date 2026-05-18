@@ -25,7 +25,7 @@ export default function RelatedDecks({ deckId, categoryId, onDeckClick }: Relate
 
       const { data } = await supabase
         .from("decks")
-        .select("id, anki_id, title, description, thumbnail_url, ranking, total_cards, anki_link, download_url, category_id")
+        .select("id, anki_id, title, description, thumbnail_url, ranking, total_cards, anki_link, category_id")
         .eq("category_id", categoryId)
         .neq("id", deckId)
         .limit(6);

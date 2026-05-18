@@ -1,102 +1,114 @@
-# Ankiflix Gemini Handoff (May 18, 2026)
+# Ankiflix Gemini Execution Instructions (May 18, 2026)
 
-## 1) Project Context Lock
-- This repo is isolated to Ankiflix Supabase project: `nkkrezwvxxosasvmvlft`.
-- Do not reuse Trochlea refs, keys, schemas, or deployment assumptions.
-- Ankiflix is running on Supabase free tier.
+## 1) Environment Lock (Mandatory)
+- Project: `ankiflix`
+- Supabase project ref: `nkkrezwvxxosasvmvlft`
+- Hosting: Vercel
+- Repo/automation: GitHub Actions
+- Rule: never mix any Trochlea config, ref, keys, migrations, or assumptions.
 
-## 2) Completed Work (High Priority)
-- React/render stability and major lint/runtime blockers fixed.
-- Search proxy upgraded for canonical Anki links + inferred direct download URLs.
-- Telemetry foundation added:
-  - `deck_events` model migration
-  - telemetry API endpoint
-  - client tracking helper
-- Search UX upgraded:
-  - direct Open on AnkiWeb
-  - local/external dedupe by `anki_id` (fallback title key)
-  - behavior ranking based on telemetry
-- Search ranking optimized:
-  - removed N+1 event queries
-  - batched telemetry aggregation per result set
-- Deck modal UX upgraded:
-  - inline related deck swap (no redirect)
-  - safe modal state resets on deck change
-- Homepage discovery upgraded:
-  - telemetry-informed Trending Now
-  - Trending This Week (strict 7-day engagement)
-  - Top Searches chips from telemetry query events
-- GitHub scraper workflow upgraded:
-  - modern action versions + Python 3.11 + pip upgrade
-- Scraper output improved:
-  - canonical links + `download_url` + real ISO timestamps
-- Lint now passes clean locally.
+## 2) Current Verified Architecture
+- Frontend: Next.js App Router
+- Backend/data: Supabase (Postgres + Auth + RLS)
+- Ingestion:
+  - API scraping proxy: `app/api/search-proxy/route.ts`
+  - GitHub scheduled scraper: `.github/workflows/scrape.yml` + `scripts/scraper.py`
+- Discovery intelligence:
+  - Telemetry event model: `deck_events`
+  - Search behavior ranking + trending rows
+  - Canonical Anki workflow (`anki_link`, `download_url`, `anki_id`)
 
-## 3) Critical Open Risk
-1. Windows `.next` file lock can block `next build` (`EPERM` on `trace-build`) until running processes release handles.
+## 3) Completed and Active Features
+- Canonical Anki routing:
+  - Search/deck flow resolves to AnkiWeb info/download endpoints.
+- Telemetry tracking:
+  - `open_ankiweb`, `download_ankiweb`, `search_open_ankiweb`
+  - API endpoint: `app/api/telemetry/deck-event/route.ts`
+- Search quality:
+  - local/external dedupe using `anki_id` fallback title key
+  - telemetry-informed behavior ranking (batched aggregation, no N+1)
+- Discovery:
+  - Trending Now (telemetry blend)
+  - Trending This Week (strict 7-day telemetry window)
+  - Top Searches chips from telemetry queries
+- Modal UX:
+  - related deck inline swap (no search redirect)
+  - safe state reset on active deck change
 
-## 4) Priority Roadmap
-
-### Phase 0 - Build Reliability (P0)
-1. Stop any running Next dev/build processes.
-2. Release `.next` file locks and clean build artifacts.
-3. Re-run `npm run lint` and `npm run build`.
-4. Capture green baseline and deployment validation notes.
-
-### Phase 1 - Supabase Data Contract Hardening (P0)
-1. Apply and verify SQL migration:
+## 4) Required DB + Env Contract
+1. Apply SQL migration:
    - `supabase/sql/phase01_anki_id_and_events.sql`
-2. Ensure `SUPABASE_SERVICE_ROLE_KEY` is set in Vercel for server telemetry/secure upserts.
-3. Confirm RLS policies for core tables/views (`favorites`, `user_deck_progress`, `leaderboard`, `deck_events`).
+2. Confirm Vercel env vars:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (required for secure server telemetry/upserts)
+3. Confirm GitHub Actions secrets:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+4. Confirm RLS compatibility for:
+   - `favorites`
+   - `user_deck_progress`
+   - `leaderboard`
+   - `deck_events`
 
-### Phase 2 - Core UX Correctness (P1)
-1. ✅ DeckModal related deck navigation is now inline swap.
-2. Keep profile/search/study states deterministic for invalid IDs/slugs.
-3. Preserve canonical Anki flow: discovery in Ankiflix, final open/download on AnkiWeb.
+## 5) Exact Gemini Runbook (Use In Order)
+1. Pull latest branch and inspect diff scope.
+2. Validate code quality:
+   - `npm run lint`
+3. Validate build:
+   - `npm run build`
+4. If build fails on Windows `.next` lock (`EPERM trace-build`):
+   - stop running Next/dev processes
+   - clear `.next` safely
+   - rerun lint/build
+5. Validate functional flows in preview:
+   - Homepage rows: Trending Now / Trending This Week / Top Searches
+   - Search: behavior ranking + dedupe + Open on AnkiWeb
+   - Deck modal: inline related deck swap + Open/Download actions
+   - Study/progress update flow
+6. Validate ingestion:
+   - Search proxy returns results and optionally upserts
+   - GitHub scraper workflow syntax and secrets present
+7. Document outcomes in this file before handoff.
 
-### Phase 3 - Netflix-grade Discovery Experience (P1)
-1. Search:
-   - ✅ local/external dedupe by stable IDs
-   - ✅ telemetry-informed behavior ranking
-2. Discovery:
-   - ✅ Trending Now with telemetry blend
-   - ✅ Trending This Week
-   - ✅ Top Searches chips
-3. Deck detail:
-   - Continue improving trust signals (last sync/source confidence/card quality).
+## 6) Non-Negotiable Functional Rules
+- Ankiflix is a discovery layer; AnkiWeb remains the source host/download endpoint.
+- Any new deck ingestion logic must preserve:
+  - `anki_id` extraction
+  - canonical `anki_link`
+  - inferred/known `download_url`
+- Do not reintroduce title-only dedupe when `anki_id` exists.
+- Do not remove telemetry fallback logic (app must still function if events table is empty/unavailable).
 
-### Phase 4 - Performance + Accessibility (P2)
-1. Continue moving remaining heavy visuals to optimized patterns where needed.
-2. Re-check bundle/hydration hotspots after telemetry features.
+## 7) High-Risk Mistakes To Avoid
+- Using anon client where service role is required for backend writes.
+- Running per-deck telemetry count queries in loops (N+1 regressions).
+- Reverting modal inline swap back to redirect flow.
+- Breaking App Router server/client boundaries during refactors.
+- Editing build settings to custom commands that remove required project folders.
 
-### Phase 5 - Quality Gates (P2)
-1. Add integration tests for:
-   - search proxy success/failure
-   - telemetry event ingest
+## 8) Next Priority Work (If Continuing)
+1. Add integration tests:
+   - search-proxy success/failure
+   - telemetry ingest endpoint
    - auth callback/signout
-2. CI gates: lint + build (+ optional typecheck).
+2. Add CI gate workflow:
+   - lint
+   - build
+3. Add telemetry dashboard/admin surface (optional) for top decks/queries.
+4. Add source confidence badges on deck detail using `last_sync_at`/`anki_id`.
 
-## 5) Key Files Added/Updated
-- `app/api/search-proxy/route.ts`
-- `app/api/telemetry/deck-event/route.ts`
+## 9) Key Files
 - `app/page.tsx`
 - `app/search/page.tsx`
-- `components/DeckModal.tsx`
 - `components/DiscoveryFeed.tsx`
+- `components/DeckModal.tsx`
 - `components/RelatedDecks.tsx`
+- `app/api/search-proxy/route.ts`
+- `app/api/telemetry/deck-event/route.ts`
 - `lib/anki.ts`
 - `lib/telemetry.ts`
 - `lib/types.ts`
 - `scripts/scraper.py`
 - `.github/workflows/scrape.yml`
 - `supabase/sql/phase01_anki_id_and_events.sql`
-
-## 6) Immediate Command Sequence
-1. Resolve `.next` lock (if present).
-2. `npm run lint`
-3. `npm run build`
-4. Deploy preview, validate:
-   - Home + discovery rows
-   - Search ranking + Top Searches chips
-   - Deck modal inline related swap
-   - AnkiWeb open/download redirects

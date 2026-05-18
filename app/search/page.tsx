@@ -91,7 +91,7 @@ function SearchContent() {
       let deckQuery = supabase.from("decks").select("*, categories!inner(*), user_deck_progress(*)");
       
       // Use logical OR for broad search
-      deckQuery = deckQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%,categories.name.ilike.%${query}%`);
+      deckQuery = deckQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
 
       if (filterCategory) {
         deckQuery = deckQuery.eq("category_id", filterCategory);

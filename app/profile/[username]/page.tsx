@@ -8,7 +8,7 @@ import IdentityCard from "@/components/IdentityCard";
 import { Loader2, BrainCircuit, ShieldAlert } from "lucide-react";
 import DeckCard from "@/components/DeckCard";
 import DeckModal from "@/components/DeckModal";
-import { Deck, Profile } from "@/lib/types";
+import { Deck } from "@/lib/types";
 
 interface ProfileWithStats {
   id: string;

@@ -15,6 +15,7 @@ import {
   ZapOff
 } from "lucide-react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -33,7 +34,10 @@ const FALLBACK_CARDS: Card[] = [
   { front: "Standard follow-up protocol?", back: "Secondary assessment within 24-48 hours post-integration." }
 ];
 
-export default function StudyPage({ params }: { params: { id: string } }) {
+export default function StudyPage() {
+  const params = useParams();
+  const deckId = params.id as string;
+
   const [deck, setDeck] = useState<Deck | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -44,10 +48,11 @@ export default function StudyPage({ params }: { params: { id: string } }) {
   const [sessionCompleted, setSessionCompleted] = useState(false);
 
   const fetchDeckAndCards = useCallback(async () => {
+    if (!deckId) return;
     const { data: deckData } = await supabase
       .from("decks")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", deckId)
       .single();
 
     if (deckData) {
@@ -63,20 +68,21 @@ export default function StudyPage({ params }: { params: { id: string } }) {
         .from('user_deck_progress')
         .select('*')
         .eq('user_id', user.id)
-        .eq('deck_id', params.id)
+        .eq('deck_id', deckId)
         .single();
       
       if (progressData) setProgress(progressData);
     }
 
     setIsLoading(false);
-  }, [params.id]);
+  }, [deckId]);
 
   useEffect(() => {
     void fetchDeckAndCards();
   }, [fetchDeckAndCards]);
 
   const handleRate = async (quality: number) => {
+    if (!deckId) return;
     setIsSyncing(true);
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -94,7 +100,7 @@ export default function StudyPage({ params }: { params: { id: string } }) {
       .from('user_deck_progress')
       .upsert({
         user_id: user.id,
-        deck_id: params.id,
+        deck_id: deckId,
         ...nextProgress,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id,deck_id' });
@@ -241,7 +247,7 @@ export default function StudyPage({ params }: { params: { id: string } }) {
               {/* Card Hud Decor */}
               <div className="absolute top-8 left-12 flex items-center space-x-3 opacity-20">
                 <BrainCircuit className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Node_{params.id.slice(0, 8)}</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Node_{deckId?.slice(0, 8)}</span>
               </div>
               <div className="absolute bottom-8 right-12 opacity-20">
                 <Sparkles className="h-5 w-5" />

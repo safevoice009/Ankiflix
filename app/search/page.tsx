@@ -49,9 +49,9 @@ async function applyBehaviorRanking(input: Deck[], query: string | null = null):
 
     const ranked = input.map((deck) => {
       const engagement = engagementByDeck.get(deck.id) ?? 0;
-      const quality = (deck.ranking ?? 0) * 20;
+      const quality = Math.min(100, (deck.ranking ?? 0) * 20);
       const cardsSignal = Math.min(10, Math.log10(Math.max(1, deck.total_cards ?? 0) + 1) * 4);
-      const telemetrySignal = Math.log1p(engagement) * 8;
+      const telemetrySignal = Math.min(25, Math.log1p(engagement) * 8);
       const hasAnkiIdSignal = deck.anki_id ? 3 : 0;
 
       // 7-Day Recency Boost
@@ -88,8 +88,8 @@ async function applyBehaviorRanking(input: Deck[], query: string | null = null):
     console.error("Telemetry query failed, falling back to quality/card ranking:", err);
     // Graceful fallback ranking
     const fallbackRanked = [...input].sort((a, b) => {
-      const aQuality = (a.ranking ?? 0) * 20 + Math.min(10, Math.log10(Math.max(1, a.total_cards ?? 0) + 1) * 4) + (a.anki_id ? 3 : 0);
-      const bQuality = (b.ranking ?? 0) * 20 + Math.min(10, Math.log10(Math.max(1, b.total_cards ?? 0) + 1) * 4) + (b.anki_id ? 3 : 0);
+      const aQuality = Math.min(100, (a.ranking ?? 0) * 20) + Math.min(10, Math.log10(Math.max(1, a.total_cards ?? 0) + 1) * 4) + (a.anki_id ? 3 : 0);
+      const bQuality = Math.min(100, (b.ranking ?? 0) * 20) + Math.min(10, Math.log10(Math.max(1, b.total_cards ?? 0) + 1) * 4) + (b.anki_id ? 3 : 0);
       return bQuality - aQuality;
     });
     return fallbackRanked;
@@ -168,18 +168,35 @@ function SearchContent() {
       }
       synonymsList = Array.from(new Set(synonymsList));
 
-      // Construct dynamic OR clause for synonyms
-      const orConditions = synonymsList
-        .flatMap((syn) => [
-          `title.ilike.%${syn}%`,
-          `description.ilike.%${syn}%`,
-        ])
-        .join(",");
+      // Match synonyms to category names/slugs
+      const matchedCategoryIds = categories
+        .filter((cat) =>
+          synonymsList.some(
+            (syn) =>
+              cat.name.toLowerCase().includes(syn) ||
+              syn.includes(cat.name.toLowerCase())
+          )
+        )
+        .map((cat) => cat.id);
+
+      // Construct dynamic OR clause for synonyms, tags and categories
+      const orConditionsList = synonymsList.flatMap((syn) => [
+        `title.ilike.%${syn}%`,
+        `description.ilike.%${syn}%`,
+        `tags.cs.{"${syn}"}`,
+      ]);
+
+      // Add matched category UUIDs to OR condition to allow category matching in broad query
+      for (const catId of matchedCategoryIds) {
+        orConditionsList.push(`category_id.eq.${catId}`);
+      }
+
+      const orConditions = orConditionsList.join(",");
 
       // Search in local decks
       let deckQuery = supabase
         .from("decks")
-        .select("*, categories!inner(*), user_deck_progress(*)");
+        .select("*, categories(*), user_deck_progress(*)");
 
       if (orConditions) {
         deckQuery = deckQuery.or(orConditions);
@@ -214,19 +231,28 @@ function SearchContent() {
       let dedupedExternal: Deck[] = [];
       try {
         const res = await fetch(`/api/search-proxy?q=${encodeURIComponent(query)}`);
+        if (!res.ok) {
+          throw new Error(`Search proxy failed with status: ${res.status}`);
+        }
         const { results: extResults } = await res.json();
-        const localKeys = new Set(
-          localDecks.map((d) => (d.anki_id ? `anki:${d.anki_id}` : `title:${d.title.toLowerCase()}`))
-        );
+        
+        const localAnkiIds = new Set(localDecks.map((d) => d.anki_id).filter(Boolean));
+        const localTitles = new Set(localDecks.map((d) => d.title.toLowerCase().trim()));
 
         dedupedExternal = ((extResults || []) as Deck[]).filter((d) => {
-          const key = d.anki_id ? `anki:${d.anki_id}` : `title:${d.title.toLowerCase()}`;
-          return !localKeys.has(key);
+          if (d.anki_id && localAnkiIds.has(d.anki_id)) {
+            return false; // Deduplicated by anki_id
+          }
+          if (d.title && localTitles.has(d.title.toLowerCase().trim())) {
+            return false; // Fallback deduplicated by title
+          }
+          return true;
         });
 
         setExternalResults(dedupedExternal);
       } catch (err) {
-        console.error("External scan failed:", err);
+        console.error("External scan failed, falling back to local results only:", err);
+        setExternalResults([]);
       }
       setIsSearchingExternal(false);
 

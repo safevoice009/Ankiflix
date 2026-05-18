@@ -72,8 +72,8 @@ export default function Navbar() {
         // 1. Local Scan
         const { data: localData } = await supabase
           .from("decks")
-          .select("id, anki_id, title, thumbnail_url, categories!inner(name)")
-          .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
+          .select("id, anki_id, title, thumbnail_url, categories(name)")
+          .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,tags.cs.{"${searchQuery.trim()}"}`)
           .limit(3);
         
         // 2. Global Vault Scan (Organic Ingestion)

@@ -15,9 +15,9 @@ function rankTrendingWithTelemetry(input: Deck[], engagementByDeck: Map<string, 
   return [...input]
     .map((deck) => {
       const engagement = engagementByDeck.get(deck.id) ?? 0;
-      const quality = (deck.ranking ?? 0) * 20;
+      const quality = Math.min(100, (deck.ranking ?? 0) * 20);
       const cardsSignal = Math.min(10, Math.log10(Math.max(1, deck.total_cards ?? 0) + 1) * 4);
-      const telemetrySignal = Math.log1p(engagement) * 8;
+      const telemetrySignal = Math.min(25, Math.log1p(engagement) * 8);
       return { deck, score: quality + cardsSignal + telemetrySignal };
     })
     .sort((a, b) => b.score - a.score)
@@ -101,12 +101,19 @@ export default async function Home() {
     const queryCounts = new Map<string, number>();
     for (const row of queryEvents || []) {
       const query = String(row.query || "").trim().toLowerCase();
-      if (!query) continue;
+      // Filter out low-signal noise (e.g. single character/2-character queries, numbers only)
+      if (!query || query.length <= 2 || /^\d+$/.test(query)) continue;
       queryCounts.set(query, (queryCounts.get(query) || 0) + 1);
     }
     topQueries = [...queryCounts.entries()]
       .sort((a, b) => b[1] - a[1])
-      .map(([query]) => query)
+      .map(([query]) => {
+        // Title Case formatting
+        return query
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+      })
       .slice(0, 10);
   } catch {
     topQueries = [];

@@ -8,26 +8,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Play, Plus, ThumbsUp, X, Check, Loader2, Sparkles, BrainCircuit, Zap } from "lucide-react";
+import { Play, Plus, ExternalLink, X, Loader2, Sparkles, BrainCircuit, Zap } from "lucide-react";
 import Image from "next/image";
 import FavoriteButton from "./FavoriteButton";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
 import { calculateNextReview, DeckProgress } from "@/lib/srs-logic";
 import { getIntelligenceInsight } from "@/lib/gemini";
 import RelatedDecks from "./RelatedDecks";
+import { Deck as DeckType } from "@/lib/types";
+import { extractAnkiId } from "@/lib/anki";
+import { trackDeckEvent } from "@/lib/telemetry";
 
-interface Deck {
-  id: string;
-  title: string;
-  description?: string;
-  thumbnail_url?: string;
-  ranking?: number;
-  total_cards?: number;
-  anki_link?: string;
-}
+type Deck = DeckType;
 
 interface DeckModalProps {
   deck: Deck | null;
@@ -39,6 +34,7 @@ interface DeckModalProps {
 
 export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
   const router = useRouter();
+  const [activeDeck, setActiveDeck] = useState<Deck | null>(deck);
   const [isReviewing, setIsReviewing] = useState(false);
   const [showRatings, setShowRatings] = useState(false);
   const [progress, setProgress] = useState<DeckProgress | null>(null);
@@ -46,47 +42,42 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
-  const handleAiSync = async () => {
-    setIsAiLoading(true);
-    const insight = await getIntelligenceInsight(deck?.title || "", deck?.description || "");
-    setAiInsight(insight);
-    setIsAiLoading(false);
-  };
-
-  useEffect(() => {
-    if (isOpen && deck) {
-      fetchProgress();
-      setIsReviewing(false);
-      setShowRatings(false);
-    }
-  }, [isOpen, deck]);
-
-  const fetchProgress = async () => {
+  const fetchProgress = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !deck) return;
+    if (!user || !activeDeck) return;
 
     const { data } = await supabase
       .from('user_deck_progress')
       .select('interval, repetition, ease, next_review')
       .eq('user_id', user.id)
-      .eq('deck_id', deck.id)
+      .eq('deck_id', activeDeck.id)
       .single();
 
     if (data) setProgress(data);
     else setProgress(null);
+  }, [activeDeck]);
+
+  const handleAiSync = async () => {
+    setIsAiLoading(true);
+    const insight = await getIntelligenceInsight(activeDeck?.title || "", activeDeck?.description || "");
+    setAiInsight(insight);
+    setIsAiLoading(false);
   };
 
-  if (!deck) return null;
+  useEffect(() => {
+    setActiveDeck(deck);
+  }, [deck]);
 
-  const startSession = () => {
-    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3");
-    audio.volume = 0.2;
-    audio.play().catch(() => {}); // Ignore if blocked by browser
-    setIsReviewing(true);
-    setTimeout(() => {
-      setShowRatings(true);
-    }, 3000); // 3 second study simulation
-  };
+  useEffect(() => {
+    if (isOpen && activeDeck) {
+      void fetchProgress();
+      setAiInsight(null);
+      setIsReviewing(false);
+      setShowRatings(false);
+    }
+  }, [isOpen, activeDeck, fetchProgress]);
+
+  if (!activeDeck) return null;
 
   const handleRate = async (quality: number) => {
     setIsLoading(true);
@@ -117,7 +108,7 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
       .from('user_deck_progress')
       .upsert({
         user_id: user.id,
-        deck_id: deck.id,
+        deck_id: activeDeck.id,
         ...nextProgress,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id,deck_id' });
@@ -137,14 +128,38 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
   };
 
   const handleDownload = () => {
-    if (deck.anki_link) {
-      window.open(deck.anki_link, "_blank");
+    const ankiId = extractAnkiId(activeDeck.download_url || activeDeck.anki_link || null);
+    void trackDeckEvent({
+      deckId: activeDeck.id,
+      eventType: "download_ankiweb",
+      ankiId,
+    });
+
+    if (activeDeck.download_url) {
+      window.open(activeDeck.download_url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    if (activeDeck.anki_link) {
+      window.open(activeDeck.anki_link, "_blank", "noopener,noreferrer");
     } else {
       window.open(
-        `https://ankiweb.net/shared/decks?search=${encodeURIComponent(deck.title)}`,
-        "_blank"
+        `https://ankiweb.net/shared/decks?search=${encodeURIComponent(activeDeck.title)}`,
+        "_blank",
+        "noopener,noreferrer"
       );
     }
+  };
+
+  const handleOpenOnAnkiWeb = () => {
+    const ankiId = extractAnkiId(activeDeck.anki_link || activeDeck.download_url || null);
+    void trackDeckEvent({
+      deckId: activeDeck.id,
+      eventType: "open_ankiweb",
+      ankiId,
+    });
+    const target = activeDeck.anki_link || `https://ankiweb.net/shared/decks?search=${encodeURIComponent(activeDeck.title)}`;
+    window.open(target, "_blank", "noopener,noreferrer");
   };
 
   const ratingButtons = [
@@ -156,13 +171,22 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          setIsReviewing(false);
+          setShowRatings(false);
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-4xl w-[95vw] md:w-full overflow-hidden rounded-xl bg-[#141414] p-0 text-white border border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] z-[200]">
         <div className="relative h-[450px] w-full">
-          {deck.thumbnail_url ? (
+          {activeDeck.thumbnail_url ? (
             <Image 
-              src={deck.thumbnail_url} 
-              alt={deck.title} 
+              src={activeDeck.thumbnail_url} 
+              alt={activeDeck.title} 
               fill 
               className="object-cover"
               priority
@@ -192,7 +216,7 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
                 {aiInsight ? (
                   <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                     <p className="text-white/80 font-medium leading-relaxed italic border-l-2 border-primary pl-4 text-left">
-                      "{aiInsight}"
+                      &quot;{aiInsight}&quot;
                     </p>
                     <div className="flex items-center justify-center space-x-2 text-primary">
                       <Zap className="h-4 w-4 fill-primary" />
@@ -264,7 +288,7 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
                 <span className="bg-primary px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white rounded-sm flex items-center gap-1">
                    <Sparkles className="h-3 w-3" /> High Authority
                 </span>
-                <span className="text-white/60 text-[10px] font-bold uppercase tracking-widest">{deck.total_cards ? `${deck.total_cards} Cards` : 'New Release'}</span>
+                <span className="text-white/60 text-[10px] font-bold uppercase tracking-widest">{activeDeck.total_cards ? `${activeDeck.total_cards} Cards` : 'New Release'}</span>
                 {progress && (
                   <span className="text-green-500 text-[10px] font-bold uppercase tracking-widest border border-green-500/30 px-1.5 rounded-sm">
                     In Progress (Ease: {progress.ease.toFixed(1)})
@@ -272,16 +296,16 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
                 )}
               </div>
               <DialogTitle className="font-heading text-5xl md:text-7xl font-extrabold tracking-tighter text-white drop-shadow-2xl">
-                {deck.title}
+                {activeDeck.title}
               </DialogTitle>
               <DialogDescription className="sr-only">
-                {deck.description || "Details about the selected Anki deck."}
+                {activeDeck.description || "Details about the selected Anki deck."}
               </DialogDescription>
             </DialogHeader>
 
             <div className="flex items-center space-x-4">
               <button 
-                onClick={startSession}
+                onClick={() => router.push(`/study/${activeDeck.id}`)}
                 className="flex items-center space-x-2 rounded-md bg-white px-10 py-3 font-black text-black transition hover:bg-white/90 transform active:scale-95 shadow-xl"
               >
                 <Play className="h-6 w-6 fill-black" />
@@ -290,12 +314,19 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
               <button 
                 onClick={handleDownload}
                 className="flex items-center justify-center rounded-full bg-black/50 border-2 border-white/20 h-12 w-12 hover:bg-white/10 transition"
-                title="Download Source"
+                title="Download from AnkiWeb"
               >
                  <Plus className="h-6 w-6" />
               </button>
+              <button
+                onClick={handleOpenOnAnkiWeb}
+                className="flex items-center justify-center rounded-full bg-black/50 border-2 border-white/20 h-12 w-12 hover:bg-white/10 transition"
+                title="Open on AnkiWeb"
+              >
+                <ExternalLink className="h-5 w-5" />
+              </button>
               <FavoriteButton 
-                deckId={deck.id} 
+                deckId={activeDeck.id} 
                 className="h-12 w-12 rounded-full border-2 border-white/20 flex items-center justify-center hover:bg-white/10 transition hover:border-white"
                 iconClassName="h-6 w-6"
               />
@@ -316,7 +347,7 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
             
             <div className="space-y-4">
               <p className="text-xl leading-relaxed text-white/90 font-sans">
-                {deck.description || "This premium Anki deck has been scientifically designed to optimize your long-term retention and exam performance. It includes high-yield facts, clear diagrams, and comprehensive coverage of the subject matter."}
+                {activeDeck.description || "This premium Anki deck has been scientifically designed to optimize your long-term retention and exam performance. It includes high-yield facts, clear diagrams, and comprehensive coverage of the subject matter."}
               </p>
             </div>
 
@@ -328,11 +359,13 @@ export default function DeckModal({ deck, isOpen, onClose }: DeckModalProps) {
                 <div className="h-px flex-1 bg-white/5" />
               </div>
               
-              <RelatedDecks deckId={deck.id} categoryId={(deck as any).category_id} onDeckClick={(d) => {
-                // Since we're in a modal, we might want to switch the deck
-                // For simplicity, we just trigger the click
-                window.location.href = `/search?q=${encodeURIComponent(d.title)}`;
-              }} />
+              <RelatedDecks
+                deckId={activeDeck.id}
+                categoryId={activeDeck.categories?.id || activeDeck.category_id || ""}
+                onDeckClick={(d) => {
+                  setActiveDeck(d);
+                }}
+              />
             </div>
           </div>
 

@@ -1,21 +1,15 @@
 "use client";
 
-import { Play, Plus, ThumbsUp, ChevronDown } from "lucide-react";
+import { Play, ThumbsUp, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import FavoriteButton from "./FavoriteButton";
+import { toast } from "react-hot-toast";
+import Link from "next/link";
 
-interface Deck {
-  id: string;
-  title: string;
-  description?: string;
-  thumbnail_url?: string;
-  ranking?: number;
-  total_cards?: number;
-  mastery?: number; // 0 to 100
-}
+import { Deck } from "@/lib/types";
 
 interface DeckCardProps {
   deck: Deck;
@@ -32,8 +26,6 @@ const FALLBACK_IMAGES: Record<string, string> = {
   Math: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=400",
   Default: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400",
 };
-
-import Link from "next/link";
 
 export default function DeckCard({ deck, onClick }: DeckCardProps) {
   const [isHovered, setIsHovered] = useState(false);
@@ -105,14 +97,25 @@ export default function DeckCard({ deck, onClick }: DeckCardProps) {
                 >
                   <Play className="h-5 w-5 fill-black" />
                 </Link>
-                <button className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5">
-                  <Plus className="h-5 w-5" />
-                </button>
-                <button className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5">
+                <FavoriteButton 
+                  deckId={deck.id} 
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5"
+                  iconClassName="h-5 w-5"
+                />
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toast.success("Intelligence Feedback Logged");
+                  }}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5"
+                >
                   <ThumbsUp className="h-5 w-5" />
                 </button>
                 <button 
-                  onClick={() => onClick(deck)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClick(deck);
+                  }}
                   className="ml-auto flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/20 transition hover:border-white text-white hover:bg-white/5"
                 >
                   <ChevronDown className="h-5 w-5" />

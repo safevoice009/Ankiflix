@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { Play, Plus, ThumbsUp, ChevronLeft } from "lucide-react";
+import { Play, ThumbsUp, ChevronLeft } from "lucide-react";
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -24,7 +24,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${deck.title} — Ankiflix`,
     description: deck.description || `Download ${deck.title} Anki deck on Ankiflix.`,
   };
-}export default async function DeckPage({ params }: Props) {
+}
+
+export default async function DeckPage({ params }: Props) {
   const { id } = params;
 
   const { data: deck } = await supabase
@@ -42,6 +44,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     { front: "Common presentation findings?", back: "Acute onset with characteristic visual indicators." }
   ];
 
+  const heroParticles = Array.from({ length: 10 }, (_, i) => ({
+    left: `${(i * 17) % 100}%`,
+    top: `${(i * 31) % 100}%`,
+    delay: `${i * 0.5}s`,
+  }));
+
   return (
     <div className="min-h-screen bg-[#141414] text-white selection:bg-primary/30 pb-32">
       
@@ -56,8 +64,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         
         {/* Particle System for Atmosphere */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
-          {[...Array(10)].map((_, i) => (
-            <div key={i} className="particle absolute bg-white h-1 w-1 rounded-full animate-float" style={{ left: `${Math.random()*100}%`, top: `${Math.random()*100}%`, animationDelay: `${i*0.5}s` }} />
+          {heroParticles.map((particle, i) => (
+            <div
+              key={i}
+              className="particle absolute bg-white h-1 w-1 rounded-full animate-float"
+              style={{ left: particle.left, top: particle.top, animationDelay: particle.delay }}
+            />
           ))}
         </div>
 
@@ -92,8 +104,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
           <div className="flex flex-wrap items-center gap-6">
             <a 
-              href={deck.anki_link || "#"} 
+              href={deck.download_url || deck.anki_link || `https://ankiweb.net/shared/decks?search=${encodeURIComponent(deck.title)}`} 
               target="_blank"
+              rel="noopener noreferrer"
               className="group flex items-center space-x-6 rounded-2xl bg-white px-12 py-6 font-black text-black transition-all hover:bg-primary hover:text-white transform active:scale-95 shadow-[0_25px_60px_rgba(255,255,255,0.15)]"
             >
               <Play className="h-7 w-7 fill-current" />

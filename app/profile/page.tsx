@@ -5,6 +5,7 @@ import ProfileSettings from "@/components/ProfileSettings";
 import IdentityCard from "@/components/IdentityCard";
 import Navbar from "@/components/Navbar";
 import { BrainCircuit, Star, Zap, History } from "lucide-react";
+import { Deck } from "@/lib/types";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -23,7 +24,7 @@ export default async function ProfilePage() {
     `)
     .eq("user_id", user.id);
 
-  const favoriteDecks = favorites?.map(f => f.decks).filter(Boolean) || [];
+  const favoriteDecks = (favorites?.map(f => f.decks).filter(Boolean) as unknown as Deck[]) || [];
 
   // 2. Fetch profile and stats
   const { data: profile } = await supabase

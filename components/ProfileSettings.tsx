@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import Image from "next/image";
 import { toast } from "react-hot-toast";
 import { Settings, User, Save, Loader2, Edit3 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface ProfileSettingsProps {
   initialProfile: {
@@ -114,7 +114,7 @@ export default function ProfileSettings({ initialProfile, userId }: ProfileSetti
            <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-full bg-[#141414] border-2 border-primary flex items-center justify-center overflow-hidden">
                  {initialProfile.avatar_url ? (
-                   <img src={initialProfile.avatar_url} className="h-full w-full object-cover" />
+                   <Image src={initialProfile.avatar_url} alt="Profile avatar" width={48} height={48} className="h-full w-full object-cover" />
                  ) : (
                    <User className="h-6 w-6 text-white/20" />
                  )}

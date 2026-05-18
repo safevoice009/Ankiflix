@@ -14,8 +14,9 @@ export default function SubmitPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url.includes("ankiweb.net/shared/info/")) {
-      toast.error("Please provide a valid AnkiWeb shared deck link");
+    const isAnkiSharedLink = /ankiweb\.net\/shared\/(info|download)\/\d+/.test(url);
+    if (!isAnkiSharedLink) {
+      toast.error("Please provide a valid AnkiWeb shared deck link (info or download URL)");
       return;
     }
 

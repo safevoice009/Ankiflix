@@ -77,7 +77,7 @@ export default function LeaderboardPage() {
                <div className="bg-[#141414] rounded-[15px] p-8 space-y-4">
                   <h3 className="text-xl font-black uppercase tracking-tighter text-primary">Join the Elite</h3>
                   <p className="text-sm text-white/60 leading-relaxed">
-                    Higher synaptic load unlocks exclusive "Intel Drops" and high-authority community features.
+                    Higher synaptic load unlocks exclusive &quot;Intel Drops&quot; and high-authority community features.
                   </p>
                   <button className="w-full py-4 rounded-xl bg-primary font-black uppercase tracking-tighter hover:bg-primary/90 transition shadow-[0_0_30px_rgba(229,9,20,0.3)]">
                     Sync My Progress

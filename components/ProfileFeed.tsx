@@ -5,16 +5,17 @@ import DeckCard from "./DeckCard";
 import DeckModal from "./DeckModal";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { Deck } from "@/lib/types";
 
 interface ProfileFeedProps {
-  favoriteDecks: any[];
+  favoriteDecks: Deck[];
 }
 
 export default function ProfileFeed({ favoriteDecks }: ProfileFeedProps) {
-  const [selectedDeck, setSelectedDeck] = useState<any>(null);
+  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleDeckClick = (deck: any) => {
+  const handleDeckClick = (deck: Deck) => {
     setSelectedDeck(deck);
     setIsModalOpen(true);
   };
@@ -28,7 +29,7 @@ export default function ProfileFeed({ favoriteDecks }: ProfileFeedProps) {
         <div className="space-y-2">
           <p className="text-white/60 text-xl font-medium">Your list is currently empty.</p>
           <p className="text-white/30 text-sm max-w-md mx-auto">
-            Explore thousands of decks and click the "+" icon to save them here for quick access later.
+            Explore thousands of decks and click the &quot;+&quot; icon to save them here for quick access later.
           </p>
         </div>
         <Link 

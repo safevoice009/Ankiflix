@@ -2,6 +2,14 @@ import Link from "next/link";
 import { Play } from "lucide-react";
 
 export default function NotFound() {
+  const decorativeParticles = Array.from({ length: 10 }, (_, i) => ({
+    size: `${120 + i * 14}px`,
+    left: `${(i * 13) % 100}%`,
+    top: `${(i * 29) % 100}%`,
+    duration: `${5 + (i % 5)}s`,
+    delay: `${(i % 4) * 0.5}s`,
+  }));
+
   return (
     <div className="min-h-screen bg-[#141414] flex flex-col items-center justify-center relative overflow-hidden">
       
@@ -24,7 +32,7 @@ export default function NotFound() {
             LOST IN THE <span className="text-primary italic">VAULT</span>
           </h2>
           <p className="text-white/40 text-lg max-w-md mx-auto font-medium">
-            The study material you're looking for has been archived or relocated. 
+            The study material you&apos;re looking for has been archived or relocated. 
             Return to the premiere for more high-authority intelligence.
           </p>
         </div>
@@ -41,18 +49,18 @@ export default function NotFound() {
       </div>
 
       {/* Decorative Particles */}
-      {[...Array(10)].map((_, i) => (
+      {decorativeParticles.map((particle, i) => (
         <div 
           key={i}
           className="absolute rounded-full bg-primary/20 pointer-events-none animate-pulse"
           style={{
-            width: `${Math.random() * 300}px`,
-            height: `${Math.random() * 300}px`,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
+            width: particle.size,
+            height: particle.size,
+            left: particle.left,
+            top: particle.top,
             filter: 'blur(100px)',
-            animationDuration: `${5 + Math.random() * 5}s`,
-            animationDelay: `${Math.random() * 2}s`,
+            animationDuration: particle.duration,
+            animationDelay: particle.delay,
           }}
         />
       ))}

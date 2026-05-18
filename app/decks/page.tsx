@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DeckCard from "@/components/DeckCard";
 import DeckModal from "@/components/DeckModal";
-import { SlidersHorizontal } from "lucide-react";
+import { Deck } from "@/lib/types";
 
 export default function DecksPage() {
-  const [decks, setDecks] = useState<any[]>([]);
+  const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDeck, setSelectedDeck] = useState<any | null>(null);
+  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {

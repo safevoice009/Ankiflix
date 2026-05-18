@@ -4,14 +4,7 @@ import { useState } from "react";
 import DeckRow from "./DeckRow";
 import DeckModal from "./DeckModal";
 
-interface Deck {
-  id: string;
-  title: string;
-  description?: string;
-  thumbnail_url?: string;
-  ranking?: number;
-  total_cards?: number;
-}
+import { Deck } from "@/lib/types";
 
 interface Category {
   id: string;
@@ -32,10 +25,18 @@ interface UserProgress {
 interface DiscoveryFeedProps {
   categories: Category[];
   trendingDecks: Deck[];
+  trendingThisWeek?: Deck[];
+  topQueries?: string[];
   userProgress?: UserProgress[];
 }
 
-export default function DiscoveryFeed({ categories, trendingDecks, userProgress = [] }: DiscoveryFeedProps) {
+export default function DiscoveryFeed({
+  categories,
+  trendingDecks,
+  trendingThisWeek = [],
+  topQueries = [],
+  userProgress = [],
+}: DiscoveryFeedProps) {
   const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -76,6 +77,23 @@ export default function DiscoveryFeed({ categories, trendingDecks, userProgress 
 
   return (
     <div className="relative -mt-24 space-y-24 pb-20 z-30 w-full">
+      {topQueries.length > 0 && (
+        <div className="max-w-[1400px] mx-auto px-4 md:px-12">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Top Searches</span>
+            {topQueries.slice(0, 8).map((q) => (
+              <a
+                key={q}
+                href={`/search?q=${encodeURIComponent(q)}`}
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/70 hover:bg-primary hover:text-white hover:border-primary transition"
+              >
+                {q}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* SRS Powered Rows */}
       {dueDecks.length > 0 && (
         <DeckRow 
@@ -99,6 +117,15 @@ export default function DiscoveryFeed({ categories, trendingDecks, userProgress 
           title="In Progress Intelligence" 
           decks={inProgressDecks} 
           onDeckClick={handleDeckClick}
+        />
+      )}
+
+      {trendingThisWeek.length > 0 && (
+        <DeckRow
+          title="Trending This Week"
+          decks={trendingThisWeek}
+          onDeckClick={handleDeckClick}
+          isSpecial
         />
       )}
 

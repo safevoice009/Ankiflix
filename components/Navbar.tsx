@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Bell, User, Menu, ChevronDown, BrainCircuit, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { Search, Bell, User, ChevronDown, BrainCircuit, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -14,16 +15,41 @@ import {
 } from "@/components/ui/sheet";
 
 import { supabase } from "@/lib/supabase";
+import { Profile, SearchResultDeck } from "@/lib/types";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+
+interface LocalDeckRow {
+  id: string;
+  anki_id?: string | null;
+  title: string;
+  thumbnail_url: string | null;
+}
+
+interface GlobalDeckRow {
+  id: string;
+  anki_id?: string | null;
+  title: string;
+  thumbnail_url?: string | null;
+}
 
 export default function Navbar() {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResultDeck[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
+
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    if (data) setProfile(data as Profile);
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -39,15 +65,6 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    if (data) setProfile(data);
-  };
-
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery.length > 2) {
@@ -55,12 +72,12 @@ export default function Navbar() {
         // 1. Local Scan
         const { data: localData } = await supabase
           .from("decks")
-          .select("id, title, thumbnail_url, categories!inner(name)")
+          .select("id, anki_id, title, thumbnail_url, categories!inner(name)")
           .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,categories.name.ilike.%${searchQuery}%`)
           .limit(3);
         
         // 2. Global Vault Scan (Organic Ingestion)
-        let globalData = [];
+        let globalData: GlobalDeckRow[] = [];
         try {
           const res = await fetch(`/api/search-proxy?q=${encodeURIComponent(searchQuery)}`);
           const { results } = await res.json();
@@ -69,10 +86,13 @@ export default function Navbar() {
           console.error("Global scan failed", err);
         }
 
-        const combined = [
-          ...(localData || []).map((d: any) => ({ ...d, source: 'local' })),
-          ...globalData.map((d: any) => ({ ...d, source: 'global' }))
-        ].filter((v, i, a) => a.findIndex(t => t.title === v.title) === i);
+        const combined: SearchResultDeck[] = [
+          ...((localData || []) as LocalDeckRow[]).map((d) => ({ ...d, source: 'local' as const })),
+          ...globalData.map((d) => ({ ...d, source: 'global' as const }))
+        ].filter((v, i, a) => {
+          const dedupeKey = (v as { anki_id?: string | null }).anki_id || v.title.toLowerCase();
+          return a.findIndex((t) => (((t as { anki_id?: string | null }).anki_id || t.title.toLowerCase()) === dedupeKey)) === i;
+        });
 
         setSearchResults(combined);
         setIsSearching(false);
@@ -175,7 +195,7 @@ export default function Navbar() {
                       >
                         <div className="h-12 w-12 rounded-lg bg-[#333] overflow-hidden ring-1 ring-white/10">
                           {user.user_metadata?.avatar_url ? (
-                            <img src={user.user_metadata.avatar_url} alt="" className="h-full w-full object-cover" />
+                            <Image src={user.user_metadata.avatar_url} alt="" width={48} height={48} className="h-full w-full object-cover" />
                           ) : (
                             <User className="h-full w-full p-2 text-white/50" />
                           )}
@@ -260,7 +280,7 @@ export default function Navbar() {
                         >
                           <div className="h-12 w-20 bg-[#222] rounded-md overflow-hidden flex-shrink-0 border border-white/5 shadow-inner">
                             {deck.thumbnail_url ? (
-                              <img src={deck.thumbnail_url} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                              <Image src={deck.thumbnail_url} alt="" width={80} height={48} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
                             ) : (
                               <div className="h-full w-full bg-gradient-to-br from-primary/30 to-black flex items-center justify-center">
                                  <span className="text-[8px] font-black opacity-20">DECK</span>
@@ -285,7 +305,7 @@ export default function Navbar() {
                           onClick={() => router.push(`/search?q=${encodeURIComponent(searchQuery)}`)}
                           className="text-[10px] uppercase tracking-widest font-black text-primary hover:text-white transition flex items-center space-x-2"
                         >
-                          <span>See all results for "{searchQuery}"</span>
+                          <span>See all results for &quot;{searchQuery}&quot;</span>
                           <ChevronDown className="h-3 w-3 -rotate-90" />
                         </button>
                       </div>
@@ -319,7 +339,7 @@ export default function Navbar() {
               >
                 <div className="h-9 w-9 overflow-hidden rounded-md bg-[#333] transition-all group-hover:ring-2 ring-primary/50 shadow-lg">
                   {user.user_metadata?.avatar_url ? (
-                    <img src={user.user_metadata.avatar_url} alt="" className="h-full w-full object-cover" />
+                    <Image src={user.user_metadata.avatar_url} alt="" width={36} height={36} className="h-full w-full object-cover" />
                   ) : (
                     <User className="h-full w-full p-1.5 text-white/70" />
                   )}

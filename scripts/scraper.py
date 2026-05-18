@@ -1,8 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import os
-import json
 import time
+from datetime import datetime, timezone
 from supabase import create_client, Client
 
 # Supabase configuration
@@ -72,17 +72,22 @@ def scrape_ankiweb_search(search_term, category_id, category_slug):
                 link_tag = cols[0].find('a')
                 title = link_tag.text.strip()
                 href = link_tag['href']
-                anki_id = href.split('/')[-1]
+                href_parts = href.strip("/").split("/")
+                anki_id = href_parts[-1] if href_parts else ""
                 rating = float(cols[1].text.strip()) if cols[1].text.strip() else 0
                 cards = int(cols[2].text.strip().replace(',', '')) if cols[2].text.strip() else 0
                 
                 # Use Unsplash fallback based on category
                 thumbnail_url = FALLBACK_IMAGES.get(category_slug, FALLBACK_IMAGES["default"])
                 
+                canonical_link = f"https://ankiweb.net/shared/info/{anki_id}" if anki_id.isdigit() else f"https://ankiweb.net{href}"
+                download_link = f"https://ankiweb.net/shared/download/{anki_id}" if anki_id.isdigit() else canonical_link
+
                 # Fetch detailed info if possible (simplified for performance)
                 deck_data = {
                     "title": title,
-                    "anki_link": f"https://ankiweb.net{href}",
+                    "anki_link": canonical_link,
+                    "download_url": download_link,
                     "category_id": category_id,
                     "ranking": rating,
                     "total_cards": cards,
@@ -90,8 +95,8 @@ def scrape_ankiweb_search(search_term, category_id, category_slug):
                     "thumbnail_url": thumbnail_url,
                     "tags": [search_term, category_slug],
                     "author": "AnkiWeb Global Community",
-                    "last_sync_at": "now()",
-                    "updated_at": "now()"
+                    "last_sync_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
                 }
                 
                 print(f"Deep Indexing: {title}")
@@ -130,4 +135,3 @@ if __name__ == "__main__":
             
     except Exception as e:
         print(f"[ERROR] Fatal exception during category fetch: {e}")
-

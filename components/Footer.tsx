@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, Mail, Smartphone, Search } from "lucide-react";
+import { Globe, Mail, Smartphone } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="space-y-6">
             <h3 className="font-heading text-2xl font-black text-primary tracking-tighter">ANKIFLIX</h3>
             <p className="text-white/40 text-xs leading-relaxed max-w-xs font-medium uppercase tracking-wider">
-              The world's first cinematic SRS intelligence catalog. Curated high-yield mastery for medical, law, and elite academic disciplines.
+              The world&apos;s first cinematic SRS intelligence catalog. Curated high-yield mastery for medical, law, and elite academic disciplines.
             </p>
             <div className="flex space-x-4 pt-4">
               <Globe className="h-5 w-5 text-white/20 hover:text-primary transition-colors cursor-pointer" />

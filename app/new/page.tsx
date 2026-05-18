@@ -5,11 +5,12 @@ import { supabase } from "@/lib/supabase";
 import DeckCard from "@/components/DeckCard";
 import DeckModal from "@/components/DeckModal";
 import { Sparkles } from "lucide-react";
+import { Deck } from "@/lib/types";
 
 export default function NewAndPopularPage() {
-  const [decks, setDecks] = useState<any[]>([]);
+  const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDeck, setSelectedDeck] = useState<any | null>(null);
+  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {

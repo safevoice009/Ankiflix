@@ -18,24 +18,6 @@ export default function Leaderboard() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchLeaderboard();
-
-    // Subscribe to changes in user_deck_progress to refresh leaderboard
-    const channel = supabase
-      .channel('leaderboard_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_deck_progress' },
-        () => fetchLeaderboard()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
   const fetchLeaderboard = async () => {
     const { data, error } = await supabase
       .from('leaderboard')
@@ -47,6 +29,34 @@ export default function Leaderboard() {
     }
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    fetchLeaderboard();
+
+    // Subscribe to changes in profiles and progress to refresh leaderboard
+    const progressChannel = supabase
+      .channel('progress_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_deck_progress' },
+        () => fetchLeaderboard()
+      )
+      .subscribe();
+
+    const profilesChannel = supabase
+      .channel('profile_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        () => fetchLeaderboard()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(progressChannel);
+      supabase.removeChannel(profilesChannel);
+    };
+  }, []);
 
   if (isLoading) {
     return (

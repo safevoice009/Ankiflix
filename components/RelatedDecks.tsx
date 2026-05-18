@@ -4,18 +4,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { AspectRatio } from "./ui/aspect-ratio";
 import { Badge } from "./ui/badge";
-
-interface Deck {
-  id: string;
-  title: string;
-  thumbnail_url?: string;
-  ranking?: number;
-}
+import { Deck } from "@/lib/types";
 
 interface RelatedDecksProps {
   deckId: string;
   categoryId: string;
-  onDeckClick: (deck: any) => void;
+  onDeckClick: (deck: Deck) => void;
 }
 
 export default function RelatedDecks({ deckId, categoryId, onDeckClick }: RelatedDecksProps) {
@@ -31,7 +25,7 @@ export default function RelatedDecks({ deckId, categoryId, onDeckClick }: Relate
 
       const { data } = await supabase
         .from("decks")
-        .select("id, title, thumbnail_url, ranking")
+        .select("id, anki_id, title, description, thumbnail_url, ranking, total_cards, anki_link, download_url, category_id")
         .eq("category_id", categoryId)
         .neq("id", deckId)
         .limit(6);

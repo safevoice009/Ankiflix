@@ -1,29 +1,37 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 import IdentityCard from "@/components/IdentityCard";
 import { Loader2, BrainCircuit, ShieldAlert } from "lucide-react";
 import DeckCard from "@/components/DeckCard";
 import DeckModal from "@/components/DeckModal";
+import { Deck, Profile } from "@/lib/types";
 
+interface ProfileWithStats {
+  id: string;
+  username: string | null;
+  avatar_url: string | null;
+  neural_score: number;
+  decks_mastered: number;
+}
 
 export default function PublicProfilePage() {
   const { username } = useParams();
-  const [profile, setProfile] = useState<any>(null);
-  const [decks, setDecks] = useState<any[]>([]);
+  const [profile, setProfile] = useState<ProfileWithStats | null>(null);
+  const [decks, setDecks] = useState<Deck[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedDeck, setSelectedDeck] = useState<any>(null);
+  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const fetchProfile = useCallback(async () => {
+    if (!username || Array.isArray(username)) {
+      setIsLoading(false);
+      return;
+    }
 
-  useEffect(() => {
-    fetchProfile();
-  }, [username]);
-
-  const fetchProfile = async () => {
     // 1. Fetch profile by username
     const { data: profileData, error: profileError } = await supabase
       .from('leaderboard')
@@ -56,9 +64,13 @@ export default function PublicProfilePage() {
     }
 
     setIsLoading(false);
-  };
+  }, [username]);
 
-  const handleDeckClick = (deck: any) => {
+  useEffect(() => {
+    void fetchProfile();
+  }, [fetchProfile]);
+
+  const handleDeckClick = (deck: Deck) => {
     setSelectedDeck(deck);
     setIsModalOpen(true);
   };
@@ -146,4 +158,3 @@ export default function PublicProfilePage() {
     </main>
   );
 }
-

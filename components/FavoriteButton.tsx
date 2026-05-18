@@ -58,7 +58,7 @@ export default function FavoriteButton({ deckId, className, iconClassName }: Fav
         setIsFavorite(true);
         toast.success("Added to My List");
       }
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong");
     } finally {
       setIsUpdating(false);

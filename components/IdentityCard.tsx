@@ -2,7 +2,6 @@
 
 import { User, Zap, Target, BrainCircuit, ShieldCheck, Share2 } from "lucide-react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 
 interface IdentityCardProps {
   profile: {
@@ -15,7 +14,7 @@ interface IdentityCardProps {
   isOwner?: boolean;
 }
 
-export default function IdentityCard({ profile, isOwner }: IdentityCardProps) {
+export default function IdentityCard({ profile }: IdentityCardProps) {
   const rank = profile.neural_score > 1000 ? "Elite Intelligence" : profile.neural_score > 500 ? "Advanced Agent" : "Novice Agent";
 
   return (

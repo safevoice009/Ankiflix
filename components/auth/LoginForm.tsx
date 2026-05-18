@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Loader2, AlertCircle, ChevronRight, UserPlus, LogIn } from "lucide-react";
+import { AuthError } from "@supabase/supabase-js";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -40,8 +41,9 @@ export default function LoginForm() {
       }
       
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Authentication failed. Please try again.");
+    } catch (err: unknown) {
+      const message = err instanceof AuthError ? err.message : "Authentication failed. Please try again.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -56,8 +58,9 @@ export default function LoginForm() {
         },
       });
       if (error) throw error;
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in with Google.");
+    } catch (err: unknown) {
+      const message = err instanceof AuthError ? err.message : "Failed to sign in with Google.";
+      setError(message);
     }
   };
 

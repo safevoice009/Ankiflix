@@ -6,16 +6,7 @@ import DeckCard from "@/components/DeckCard";
 import DeckModal from "@/components/DeckModal";
 import { notFound } from "next/navigation";
 
-interface Deck {
-  id: string;
-  title: string;
-  description: string;
-  thumbnail_url: string;
-  anki_link: string;
-  ranking: number;
-  total_cards: number;
-  downloads: number;
-}
+import { Deck } from "@/lib/types";
 
 interface Category {
   id: string;

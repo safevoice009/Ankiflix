@@ -5,14 +5,7 @@ import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DeckCard from "./DeckCard";
 
-interface Deck {
-  id: string;
-  title: string;
-  description?: string;
-  thumbnail_url?: string;
-  ranking?: number;
-  total_cards?: number;
-}
+import { Deck } from "@/lib/types";
 
 interface DeckRowProps {
   title: string;
